@@ -1,0 +1,15 @@
+cd ./src && make optados
+make[1]: Entering directory '/rds/general/user/fcm19/home/modules_codes/optados_modified/src'
+gfortran -c -fconvert=big-endian -fPIC -finit-local-zero -O3 electronic.f90
+gfortran -c -fconvert=big-endian -fPIC -finit-local-zero -O3 dos_utils.f90
+gfortran -c -fconvert=big-endian -fPIC -finit-local-zero -O3 core.f90
+gfortran -c -fconvert=big-endian -fPIC -finit-local-zero -O3 dos.f90
+gfortran -c -fconvert=big-endian -fPIC -finit-local-zero -O3 jdos_utils.f90
+gfortran -c -fconvert=big-endian -fPIC -finit-local-zero -O3 jdos.f90
+gfortran -c -fconvert=big-endian -fPIC -finit-local-zero -O3 optics.f90
+gfortran -c -fconvert=big-endian -fPIC -finit-local-zero -O3 projection_utils.f90
+gfortran -c -fconvert=big-endian -fPIC -finit-local-zero -O3 pdos.F90
+gfortran -c -fconvert=big-endian -fPIC -finit-local-zero -O3 pdis.f90
+gfortran -c -fconvert=big-endian -fPIC -finit-local-zero -O3 photo.f90
+gfortran -fconvert=big-endian -fPIC -finit-local-zero -O3 optados.f90 build.o algorithms.o cell.o comms.o constants.o core.o dos.o dos_utils.o electronic.o io.o jdos.o jdos_utils.o optics.o parameters.o pdos.o pdis.o projection_utils.o xmgrace_utils.o photo.o -o ../optados.x
+make[1]: Leaving directory '/rds/general/user/fcm19/home/modules_codes/optados_modified/src'
