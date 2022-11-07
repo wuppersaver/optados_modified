@@ -1962,28 +1962,21 @@ end subroutine calc_one_step_model
                    p_term = 1.0_dp+(p1*l_prime)+(p2*l_prime**2)+(p3*l_prime**3)+(p4*l_prime**4)
                    q_term = q1+(q2*l_prime)+(q3*l_prime**2)+(q4*l_prime**3)
                    v_func_long = (1-l_prime)*p_term+q_term*l_prime*log(l_prime)
-                   
                    write(stdout,'(es13.6,1x,es13.6,1x,es13.6)') l_prime, v_function, v_func_long
+                   
                    G_number=v_function*b_factor*(field_energy(n_eigen,N_spin,N)**(2.0_dp/3.0_dp))/elec_field
                    write(stdout, '(1x,es15.8)') G_number
+                   write(stdout, '(1x,es15.8)') exp(-1*G_number)
                transmission_prob = exp(-1*v_function*b_factor*(field_energy(n_eigen,N_spin,N)**(2.0_dp/3.0_dp))/elec_field)       
                trans_prob_long = exp(-1*v_func_long*b_factor*(field_energy(n_eigen,N_spin,N)**(2.0_dp/3.0_dp))/elec_field)                   
                    
                field_emission(n_eigen,N_spin,N) = trans_prob_long
-                   !write(stdout, '(a11,es24.6,1x)') "band_eff - ", band_eff
-                   !write(stdout,1215) "barrier = ", work_function_eff, "-(", band_energy(n_eigen,N_spin,N), "-",efermi,")"  
-                   !write(stdout,1213) "barrier- ", barrier_height, " l'-", l_prime, " v- ", v_function, " D- ",  transmission_prob
-                   !write(stdout,1213) "barrier- ", barrier_height, "l'l-", l_prime, " vl- ", v_func_long, " D2- ",  trans_prob_long
-                   write(stdout, 1215) "band eff - ", band_eff," field_energy=", barrier_height, "field emission= ", &
-                     field_emission(n_eigen,N_spin,N)
-                   1215 FORMAT (1x,a12,es13.6,1x,a15,es13.6,1x,a17,es13.6)
-                   write(stdout,'(1x,a15,es24.16)') "field emission", field_emission(n_eigen,N_spin,N)
-                   !1213              FORMAT (a9,es13.6,a6,es13.6,a6,es13.6,a6,es13.6)  
+                   write(stdout, 1215) "band eff - ", band_eff," field_energy=", barrier_height
+                   1215 FORMAT (1x,a12,es13.6,1x,a15,es13.6)
+                   write(stdout,'(1x,a15,es24.16)') "field emission", field_emission(n_eigen,N_spin,N) 
               end if
                temp_emission(n_eigen,N_spin,N) = field_emission(n_eigen,N_spin,N)*fermi_dirac
                write(stdout,'(1x,a15,es24.16)') "temp emission", temp_emission(n_eigen,N_spin,N)
-              ! if(temp_emission(n_eigen,N_spin,N).gt.0.0_dp)then
-              ! end if
         end do
       end do
     end do
