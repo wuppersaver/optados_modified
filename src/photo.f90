@@ -1920,7 +1920,7 @@ end subroutine calc_one_step_model
     !integer :: N,N_spin,n_eigen,z_distance,z,z_max
     integer :: N,N_spin,n_eigen
     real(kind=dp) :: l_prime, v_function, b_factor, transmission_prob, band_eff
-    real(kind=dp) :: p1,p2,p3,p4,q1,q2,q3,q4,p_term,q_term,trans_prob_long,v_func_long,G_number 
+    real(kind=dp) :: p1,p2,p3,p4,q1,q2,q3,q4,p_term,q_term,trans_prob_long,v_func_long,G_number,exp_G 
 
      evacuum = efermi+work_function
      allocate(field_energy(nbands,nspins,num_kpoints_on_node(my_node_id)),stat=ierr)
@@ -1948,35 +1948,45 @@ end subroutine calc_one_step_model
      do N=1,num_kpoints_on_node(my_node_id)   ! Loop over kpoints
         do N_spin=1,nspins                    ! Loop over spins
            do n_eigen=1,nbands
-              write(stdout, '(a7,I5.1,a10,I5.1,1x)') "kpt - ", N, " band  - ", n_eigen
+            !   write(stdout, '(a6,I5.1,a10,I5.1)') "kpt - ", N, " band  - ", n_eigen
               barrier_height= work_function-(band_energy(n_eigen,N_spin,N)-efermi)
               band_eff=(band_energy(n_eigen,N_spin,N)-efermi)
               fermi_dirac=1.0_dp/(exp((band_eff/(kB*temp)))+1.0_dp)
-              field_energy(n_eigen,N_spin,N) = abs(evacuum - band_energy(n_eigen,N_spin,N)) 
+              field_energy(n_eigen,N_spin,N) = evacuum - band_energy(n_eigen,N_spin,N) 
+              if (field_energy(n_eigen,N_spin,N).lt.0.0)then
+               field_emission(n_eigen,N_spin,N) = 1.0
+              else
+                  if((elec_field/(4*pi*epsilon_zero*1E-4)*elec_field).lt.(field_energy(n_eigen,N_spin,N)**2))then
+                   
+                     l_prime = (elec_field/(4.0_dp*pi*epsilon_zero*1.0E-4*(field_energy(n_eigen,N_spin,N)**2.0_dp)))
+                     if (l_prime.gt.1.0_dp) then
+                        l_prime = 1.0_dp
+                     end if
+                     v_function = 1-l_prime+(1.0_dp/6.0_dp)*l_prime*log(l_prime)
 
-              if((elec_field/(4*pi*epsilon_zero*1E-4)*elec_field).lt.(field_energy(n_eigen,N_spin,N)**2))then
-                   
-                   l_prime = (elec_field/(4.0_dp*pi*epsilon_zero*1.0E-4*(field_energy(n_eigen,N_spin,N)**2.0_dp)))
-                   v_function = 1-l_prime+(1.0_dp/6.0_dp)*l_prime*log(l_prime)
+                     p_term = 1.0_dp+(p1*l_prime)+(p2*l_prime**2)+(p3*l_prime**3)+(p4*l_prime**4)
+                     q_term = q1+(q2*l_prime)+(q3*l_prime**2)+(q4*l_prime**3)
+                     v_func_long = (1-l_prime)*p_term+q_term*l_prime*log(l_prime)
+                     ! write(stdout,'(es13.6,1x,es13.6,1x,es13.6)') l_prime, v_function, v_func_long
+                     
+                     G(n_eigen,N_spin,N)=v_function*b_factor*(field_energy(n_eigen,N_spin,N)**(2.0_dp/3.0_dp))/elec_field
+                     exp_G=exp(-1*G(n_eigen,N_spin,N))
+                     ! write(stdout, '(a7,1x,es15.6)') "G", G(n_eigen,N_spin,N)
+                     ! write(stdout, '(a7,1x,es15.6)') "exp(-G)", exp_G
 
-                   p_term = 1.0_dp+(p1*l_prime)+(p2*l_prime**2)+(p3*l_prime**3)+(p4*l_prime**4)
-                   q_term = q1+(q2*l_prime)+(q3*l_prime**2)+(q4*l_prime**3)
-                   v_func_long = (1-l_prime)*p_term+q_term*l_prime*log(l_prime)
-                   write(stdout,'(es13.6,1x,es13.6,1x,es13.6)') l_prime, v_function, v_func_long
+                     transmission_prob = exp(-1*v_function*b_factor*(field_energy(n_eigen,N_spin,N)**(2.0_dp/3.0_dp))/elec_field)       
+                     trans_prob_long = exp(-1*v_func_long*b_factor*(field_energy(n_eigen,N_spin,N)**(2.0_dp/3.0_dp))/elec_field)                   
+                        
+                     field_emission(n_eigen,N_spin,N) = trans_prob_long
                    
-                   G_number=v_function*b_factor*(field_energy(n_eigen,N_spin,N)**(2.0_dp/3.0_dp))/elec_field
-                   write(stdout, '(1x,es15.8)') G_number
-                   write(stdout, '(1x,es15.8)') exp(-1*G_number)
-               transmission_prob = exp(-1*v_function*b_factor*(field_energy(n_eigen,N_spin,N)**(2.0_dp/3.0_dp))/elec_field)       
-               trans_prob_long = exp(-1*v_func_long*b_factor*(field_energy(n_eigen,N_spin,N)**(2.0_dp/3.0_dp))/elec_field)                   
-                   
-               field_emission(n_eigen,N_spin,N) = trans_prob_long
-                   write(stdout, 1215) "band eff - ", band_eff," field_energy=", barrier_height
-                   1215 FORMAT (1x,a12,es13.6,1x,a15,es13.6)
-                   write(stdout,'(1x,a15,es24.16)') "field emission", field_emission(n_eigen,N_spin,N) 
               end if
+            end if
+               ! write(stdout, 1215) "band eff - ", band_eff," field_energy=", field_energy(n_eigen,N_spin,N),"barrier",barrier_height
+               ! 1215 FORMAT (a11,es13.6,1x,a15,es13.6,1x,a12,es13.6)
                temp_emission(n_eigen,N_spin,N) = field_emission(n_eigen,N_spin,N)*fermi_dirac
-               write(stdout,'(1x,a15,es24.16)') "temp emission", temp_emission(n_eigen,N_spin,N)
+               ! write(stdout,'(a14,es24.16)') "field emission", field_emission(n_eigen,N_spin,N)
+               ! write(stdout,'(a13,es24.16)') "temp emission", temp_emission(n_eigen,N_spin,N)
+                
         end do
       end do
     end do
