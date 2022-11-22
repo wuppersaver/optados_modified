@@ -40,35 +40,39 @@ module od_cell
   private
   !-------------------------------------------------------------------------!
   ! R E A L   S P A C E   V A R I A B L E S
-  real(kind=dp), public, save :: real_lattice(1:3, 1:3)
-  real(kind=dp), public, save :: recip_lattice(1:3, 1:3)
+  real(kind=dp), public, save :: real_lattice(1:3,1:3)
+  real(kind=dp), public, save :: recip_lattice(1:3,1:3)
   real(kind=dp), public, save :: cell_volume
   !-------------------------------------------------------------------------!
 
+
   !-------------------------------------------------------------------------!
   ! R E C I P R O C A L   S P A C E   V A R I A B L E S
-  real(kind=dp), allocatable, public, save :: kpoint_r(:, :)
-  real(kind=dp), allocatable, public, save :: kpoint_r_cart(:, :)
+  real(kind=dp), allocatable, public, save :: kpoint_r(:,:)
+  real(kind=dp), allocatable, public, save :: kpoint_r_cart(:,:)
   real(kind=dp), allocatable, public, save :: kpoint_weight(:)
-  integer, allocatable, public, save       :: num_kpoints_on_node(:)
+  integer, allocatable,public, save       :: num_kpoints_on_node(:)
 
-  integer, public, save :: nkpoints
+ 
+  integer, public, save :: nkpoints 
   integer, public, save :: kpoint_grid_dim(3)
-
+ 
   !-------------------------------------------------------------------------!
   ! Symmetry Operations
   integer, public, save :: num_crystal_symmetry_operations
-  real(kind=dp), allocatable, public, save :: crystal_symmetry_disps(:, :)
-  real(kind=dp), allocatable, public, save :: crystal_symmetry_operations(:, :, :)
-
-  ! Atom sites
-  real(kind=dp), allocatable, public, save :: atoms_pos_frac(:, :, :)
-  real(kind=dp), allocatable, public, save :: atoms_pos_cart(:, :, :)
-  integer, allocatable, public, save :: atoms_species_num(:)
-  character(len=maxlen), allocatable, public, save :: atoms_label(:)
-  character(len=2), allocatable, public, save :: atoms_symbol(:)
-  integer, public, save :: num_atoms
-  integer, public, save :: num_species
+  real(kind=dp), allocatable, public, save :: crystal_symmetry_disps(:,:)
+  real(kind=dp), allocatable, public, save :: crystal_symmetry_operations(:,:,:)
+  
+  ! Atom sites 
+  real(kind=dp), allocatable,     public, save :: atoms_pos_frac(:,:,:)
+  real(kind=dp), allocatable,     public, save :: atoms_pos_cart(:,:,:)
+  real(kind=dp), allocatable,     public, save :: atoms_pos_cart_photo(:,:)
+  integer, allocatable,           public, save :: atoms_species_num(:)  
+  character(len=maxlen), allocatable,  public, save :: atoms_label(:)
+  character(len=2), allocatable,  public, save :: atoms_symbol(:)
+  integer,                        public, save :: num_atoms
+  integer,                        public, save :: num_species
+  character(len=maxlen),allocatable,  public, save  :: atoms_label_tmp(:)
 
   !-------------------------------------------------------------------------!
   ! G L O B A L L Y   A V A I L A B L E   F U N C T I O N S
@@ -79,6 +83,8 @@ module od_cell
   public :: cell_read_cell
   public :: cell_get_symmetry
   public :: cell_dist
+  public :: cell_get_real_lattice
+  public :: cell_calc_kpoint_r_cart
   !-------------------------------------------------------------------------!
 
 contains

@@ -1,0 +1,12 @@
+# Cif File
+*.cif
+.vscode/
+# Markdown files
+*.md
+test.ipynb
+*.e*
+optados/src/*.o
+optados/src/*.mod
+*.x
+*.xyz
+
