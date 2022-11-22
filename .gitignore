@@ -9,7 +9,7 @@ function_scripts/calculate_photo_properties.py
 *.md
 test.ipynb
 *.e*
-src/*.o
+optados/src/*.o
 *.x
 CO_on_Cu111.xyz
 GaAs_run.ipynb
