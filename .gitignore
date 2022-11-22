@@ -1,9 +1,5 @@
 # Cif File
 *.cif
-
-# Cu_* folders
-structures/
-function_scripts/calculate_photo_properties.py
 .vscode/
 # Markdown files
 *.md
@@ -12,6 +8,5 @@ test.ipynb
 optados/src/*.o
 optados/src/*.mod
 *.x
-CO_on_Cu111.xyz
-GaAs_run.ipynb
+*.xyz
 
