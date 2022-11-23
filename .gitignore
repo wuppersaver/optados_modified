@@ -7,6 +7,10 @@ test.ipynb
 *.e*
 optados/src/*.o
 optados/src/*.mod
-*.x
+optados/*.x
 *.xyz
+optados/*.o*
+optados/*.e*
+optados/*.sh
+optados/*.log
 
