@@ -496,7 +496,7 @@ contains
   end subroutine make_weights
 
   !***************************************************************
-  subroutine calc_epsilon_2
+  subroutine calc_epsilon_2(weighted_jdos, weighted_dos_at_e)
     !***************************************************************
     ! This subroutine calculates epsilon_2
 
