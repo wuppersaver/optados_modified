@@ -104,7 +104,7 @@ contains
     real(kind=dp)            :: kpoint_TR(1:3, 1:num_kpts*2)
     real(kind=dp)            :: unique_kpoints(1:3, num_kpts*2)
     integer                  :: nunique_kpoints, iunique_kpoints
-    integer                  :: ikpt, idim, jkpt, i
+    integer                  :: ikpt, idim, jkpt!, i
     real(kind=dp)    :: subtraction_tol, min_img, min_img2
     real(kind=dp)    :: min_img3, image, min_img_tol
 
@@ -1102,8 +1102,8 @@ contains
     ! subroutine before. 
 
      use od_comms, only : on_root
-     use od_io, only : io_file_unit, seedname, filename_len,stdout, io_time,&
-                       io_error
+     use od_io, only : io_file_unit, seedname, filename_len, io_time,&
+                       io_error!, stdout
      use od_constants, only : bohr2ang
 
     integer :: band_unit
@@ -1139,20 +1139,19 @@ contains
     ! This subroutine calculates the cartesian coordinates of the k points
     use od_algorithms, only : utility_reciprocal_frac_to_cart
     use od_comms, only : my_node_id
-    use od_io, only : io_file_unit, seedname, filename_len,stdout, io_time,&
-      io_error
+    use od_io, only : io_file_unit, filename_len, io_time, io_error!, stdout, seedname
 !    use od_electronic, only : elec_read_band_energy
 
-    integer :: i,ik,loop,ierr
+    integer :: loop,ierr!,i,ik
     real(kind=dp),allocatable,dimension(:,:) :: kpoint_r_tmp
     real(kind=dp),allocatable,dimension(:,:) :: kpoint_r_cart_tmp
 
     allocate(kpoint_r_tmp(3,nkpoints),stat=ierr)
     if (ierr/=0) call io_error('Error allocating kpoint_r_tmp in&
-    cell_calc_kpoint_r_cart')
+    &cell_calc_kpoint_r_cart')
     allocate(kpoint_r_cart_tmp(3,nkpoints),stat=ierr)
     if (ierr/=0) call io_error('Error allocating kpoint_r_cart_tmp in&
-    cell_calc_kpoint_r_cart')
+    &cell_calc_kpoint_r_cart')
     
    kpoint_r_tmp=kpoint_r
 
@@ -1180,11 +1179,11 @@ contains
 
      deallocate(kpoint_r_tmp,stat=ierr)
      if(ierr/=0) call io_error('Error: cell_calc_kpoint_r_cart - &
-     failed to deallocate kpoint_r_tmp')
+     &failed to deallocate kpoint_r_tmp')
 
      deallocate(kpoint_r_cart_tmp,stat=ierr)
      if(ierr/=0) call io_error('Error: cell_calc_kpoint_r_cart - &
-     failed to deallocate kpoint_r_cart_tmp')
+     &failed to deallocate kpoint_r_cart_tmp')
 
 
 
