@@ -30,7 +30,7 @@
 !    - matrix_weights: weights of desired projectors by (projector, band, kpoint, spin).
 !    - proj_{symbol,am,sites}: array of projections split by OptaDOS shortcuts.
 !
-! as well as a few global variables, `num_proj` and `shortcut`.
+! as well as a few global variables,  and .
 !-------------------------------------------------------------------------------
 module od_projection_utils
 
@@ -176,7 +176,7 @@ contains
         projection_array(:, :, loop, loop) = 1
       end do
       shortcut = .true.
-    endif
+    end if
 
     if (.not. shortcut) then
 
@@ -390,7 +390,7 @@ contains
             ctemp2 = dummy
           else
             ctemp2 = dummy(:pos3 - 1)
-          endif
+          end if
           read (ctemp2(1:), *, err=106, end=106) m_string
           select case (trim(adjustl(m_string)))
           case ('s')
@@ -406,10 +406,10 @@ contains
           end select
           if (pos3 == 0) exit
           dummy = dummy(pos3 + 1:)
-        enddo
+        end do
       else
         am_sum = .true.
-      endif
+      end if
 
       if (site_sum) then
         num_sites = 1

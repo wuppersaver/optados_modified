@@ -66,7 +66,7 @@ contains
     !===============================================================================
     use od_parameters, only: linear, fixed, adaptive, quad, iprint, dos_per_volume
     use od_electronic, only: elec_read_band_gradient, band_gradient, nspins, electrons_per_state, &
-      num_electrons, efermi_set
+                             num_electrons, efermi_set
     use od_comms, only: on_root
     use od_io, only: stdout, io_error, io_time
     use od_cell, only: cell_volume
@@ -86,8 +86,8 @@ contains
       if (allocated(E)) then
         if (on_root .and. iprint > 1) write (stdout, *) " Already calculated jdos, so returning..."
         return  ! The jdos has already been calculated previously so just return.
-      endif
-    endif
+      end if
+    end if
 
     !-------------------------------------------------------------------------------
     ! R E A D   B A N D   G R A D I E N T S
@@ -95,7 +95,7 @@ contains
     ! band gradients too
     if (quad .or. linear .or. adaptive) then
       if (.not. allocated(band_gradient)) call elec_read_band_gradient
-    endif
+    end if
     !-------------------------------------------------------------------------------
 
     if (.not. efermi_set) call dos_utils_set_efermi
@@ -114,9 +114,9 @@ contains
       else
         call calculate_jdos('f', jdos_fixed)
         call jdos_utils_merge(jdos_fixed)
-      endif
+      end if
 
-    endif
+    end if
     if (adaptive) then
       if (calc_weighted_jdos) then
         call calculate_jdos('a', jdos_adaptive, matrix_weights, weighted_jdos)
@@ -124,8 +124,8 @@ contains
       else
         call calculate_jdos('a', jdos_adaptive)
         call jdos_utils_merge(jdos_adaptive)
-      endif
-    endif
+      end if
+    end if
     if (linear) then
       if (calc_weighted_jdos) then
         call calculate_jdos('l', jdos_linear, matrix_weights, weighted_jdos)
@@ -133,14 +133,14 @@ contains
       else
         call calculate_jdos('l', jdos_linear)
         call jdos_utils_merge(jdos_linear)
-      endif
-    endif
+      end if
+    end if
 
     if (quad) then
       call io_error("quadratic broadening not implemented")
       !if(quad)    call merge_dos(dos_quad)
       !if(quad)    call merge_dos(intdos_quad)
-    endif
+    end if
 
 !    if(.not.on_root) then
 !       if(allocated(E)) deallocate(E, stat=ierr)
@@ -152,25 +152,25 @@ contains
       write (stdout, '(1x,a59,f11.3,a8)') &
            '+ Time to calculate Joint Density of States              &
            &      ', time1 - time0, ' (sec) +'
-    endif
+    end if
     !-------------------------------------------------------------------------------
 
     if (dos_per_volume) then
       if (fixed) then
         jdos_fixed = jdos_fixed/cell_volume
-      endif
+      end if
       if (adaptive) then
         jdos_adaptive = jdos_adaptive/cell_volume
-      endif
+      end if
       if (linear) then
         jdos_linear = jdos_linear/cell_volume
-      endif
+      end if
 
       ! if(quad) then
       !    dos_quad=dos_quad/cell_volume
       !    intdos_quad=intdos_quad/cell_volume
       ! endif
-    endif
+    end if
 
   end subroutine jdos_utils_calculate
 
@@ -190,7 +190,7 @@ contains
 
     integer       :: idos, ierr
     real(kind=dp) :: max_band_energy
-    real(kind=dp), intent(out), allocatable, optional    :: E(:) 
+    real(kind=dp), intent(out), allocatable, optional    :: E(:)
 
     if (jdos_max_energy < 0.0_dp) then ! we have to work it out ourselves
       max_band_energy = maxval(band_energy)
@@ -205,8 +205,8 @@ contains
         write (stdout, '(1x,a1,a38,f11.3,13x,a15)') &
              & '|', 'max_band_energy (before correction) : ',&
              & max_band_energy, "<-- JDOS Grid |"
-      endif
-    endif
+      end if
+    end if
 
     jdos_nbins = abs(ceiling(jdos_max_energy/jdos_spacing))
     jdos_max_energy = jdos_nbins*jdos_spacing
@@ -228,7 +228,7 @@ contains
       write (stdout, '(1x,a78)') &
         '+----------------------------------------------------------------------------+'
       write (stdout, *)
-    endif
+    end if
 
   end subroutine setup_energy_scale
 
@@ -329,9 +329,9 @@ contains
     if (adaptive .or. hybrid_linear) then
       do i = 1, 3
         sub_cell_length(i) = sqrt(recip_lattice(i, 1)**2 + recip_lattice(i, 2)**2 + recip_lattice(i, 3)**2)*step(i)
-      enddo
+      end do
       adaptive_smearing_temp = adaptive_smearing*sum(sub_cell_length)/3.0_dp
-    endif
+    end if
 
     if (fixed) width = fixed_smearing
 
@@ -341,22 +341,22 @@ contains
       allocate (weighted_jdos(jdos_nbins, nspins, N_geom), stat=ierr)
       if (ierr /= 0) call io_error('Error: calculate_jdos - failed to allocate weighted_jdos')
       weighted_jdos = 0.0_dp
-    endif
+    end if
 
     if (iprint > 1 .and. on_root) then
       write (stdout, '(1x,a78)') '+------------------------------ Calculate JDOS ------------------------------+'
-    endif
+    end if
 
     do ik = 1, num_kpoints_on_node(my_node_id)
       if (iprint > 1 .and. on_root) then
         if (mod(real(ik, dp), 10.0_dp) == 0.0_dp) write (stdout, '(1x,a1,a38,i4,a3,i4,1x,a14,3x,a10)') ',', &
              &"Calculating k-point ", ik, " of", num_kpoints_on_node(my_node_id), 'on this node.', "<-- JDOS |"
-      endif
+      end if
       do is = 1, nspins
         occ_states: do ib = 1, nbands
           if (num_exclude_bands > 0) then
             if (any(exclude_bands == ib)) cycle
-          endif
+          end if
           if (band_energy(ib, is, ik) .ge. efermi) cycle occ_states
           unocc_states: do jb = 1, nbands
             if (band_energy(jb, is, ik) .lt. efermi) cycle unocc_states
@@ -380,7 +380,7 @@ contains
                 dos_temp = doslin(EV(0), EV(1), EV(2), EV(3), EV(4), E(idos), cuml)
               else
                 dos_temp=gaussian(band_energy(jb,is,ik)-band_energy(ib,is,ik)+scissor_op,width,E(idos))!&
-              endif
+              end if
 
               jdos(idos, is) = jdos(idos, is) + dos_temp*electrons_per_state*kpoint_weight(ik)
 
@@ -401,7 +401,7 @@ contains
 
     if (iprint > 1 .and. on_root) then
       write (stdout, '(1x,a78)') '+----------------------------------------------------------------------------+'
-    endif
+    end if
 
   end subroutine calculate_jdos
 

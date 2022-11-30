@@ -41,9 +41,8 @@ module od_electronic
   complex(kind=dp), allocatable, public, save  :: elnes_mat(:, :, :, :, :)
 
   !Additional variables for photoemission.- V.Chang Nov-2020
-  real(kind=dp), allocatable, public, save  :: band_curvature(:,:,:,:,:)
-  complex(kind=dp), allocatable, public, save  :: foptical_mat(:,:,:,:,:)
-
+  real(kind=dp), allocatable, public, save  :: band_curvature(:, :, :, :, :)
+  complex(kind=dp), allocatable, public, save  :: foptical_mat(:, :, :, :, :)
 
   real(kind=dp), public, save :: efermi ! The fermi energy we finally decide on
   logical, public, save       :: efermi_set = .false. ! Have we set efermi?
@@ -123,7 +122,6 @@ module od_electronic
   public :: elec_read_band_curvature
   public :: elec_read_foptical_mat
 
-
   !-------------------------------------------------------------------------!
 
 contains
@@ -160,7 +158,7 @@ contains
     if (.not. pdis) then
       write (stdout, '(1x,a46,6x,i3,1x,a1,i3,1x,a1,i3,12x,a1)') '|  Grid size                                 :' &
         , kpoint_grid_dim(1), 'x', kpoint_grid_dim(2), 'x', kpoint_grid_dim(3), '|'
-    endif
+    end if
     write (stdout, '(1x,a46,i14,a18)') '|  Number of K-points                        :', nkpoints, "|"
 
     if (nspins > 1) then
@@ -171,7 +169,7 @@ contains
       write (stdout, '(1x,a78)') '|  Spin-Polarised Calculation                :           False               |'
       write (stdout, '(1x,a46,f17.2,a15)') "|  Number of electrons                       :", num_electrons(1), "|"
 
-    endif
+    end if
     write (stdout, '(1x,a78)') '+----------------------------------------------------------------------------+'
 
   end subroutine elec_report_parameters
@@ -221,7 +219,7 @@ contains
       gradient_filename = trim(seedname)//".cst_vel"
     else
       gradient_filename = trim(seedname)//".dome_bin"
-    endif
+    end if
     if (on_root) inquire (file=gradient_filename, exist=exists)
     call comms_bcast(exists, 1)
 
@@ -243,7 +241,7 @@ contains
             call io_error('Error: Trying to read newer version of dome_bin file. Update optados!')
           read (gradient_unit) domefile_header
           if (iprint > 1) write (stdout, *) trim(domefile_header)
-        endif
+        end if
       end if
 
       ! Figure out how many kpoint should be on each node
@@ -294,7 +292,7 @@ contains
         end do
         call elec_dealloc_optical  ! given that it is a large matrix we'll let it go
         ! potentially that means reading it twice...
-      endif
+      end if
     end if
 
     return
@@ -307,110 +305,109 @@ contains
   !=========================================================================
   subroutine elec_read_band_curvature
     !=========================================================================
-    ! Read the .ddome file in paralell if appropriate. These are the 
+    ! Read the .ddome file in paralell if appropriate. These are the
     ! curvatures of the bands at each kpoint.
     !-------------------------------------------------------------------------
     ! Arguments: None
     !-------------------------------------------------------------------------
-    ! Parent module variables: band_curvature,nspins,nbands                                       
+    ! Parent module variables: band_curvature,nspins,nbands
     !-------------------------------------------------------------------------
-    ! Modules used:  See below                                                 
+    ! Modules used:  See below
     !-------------------------------------------------------------------------
-    ! Key Internal Variables: None                                                      
+    ! Key Internal Variables: None
     !-------------------------------------------------------------------------
-    ! Necessary conditions: None     
+    ! Necessary conditions: None
     !-------------------------------------------------------------------------
-    ! Known Worries: None                                              
+    ! Known Worries: None
     !-------------------------------------------------------------------------
     ! Written by  V Chang                                             Nov 2020
     !=========================================================================
-    use od_comms, only : on_root, my_node_id, num_nodes, root_id,&
+    use od_comms, only: on_root, my_node_id, num_nodes, root_id,&
          & comms_recv, comms_send, comms_bcast
-    use od_io,    only : io_time, filename_len, seedname, stdout, io_file_unit,&
+    use od_io, only: io_time, filename_len, seedname, stdout, io_file_unit,&
          & io_error
-    use od_cell,  only : num_kpoints_on_node,nkpoints
-    use od_constants,only : bohr2ang, H2eV
-    use od_parameters, only : legacy_file_format,iprint,devel_flag
-    use od_algorithms, only : algor_dist_array
+    use od_cell, only: num_kpoints_on_node, nkpoints
+    use od_constants, only: bohr2ang, H2eV
+    use od_parameters, only: legacy_file_format, iprint, devel_flag
+    use od_algorithms, only: algor_dist_array
     implicit none
 
-    integer :: curvature_unit,i,j,ib,jb,is,ik,inodes,ierr,loop
+    integer :: curvature_unit, i, j, ib, jb, is, ik, inodes, ierr, loop
     character(filename_len) :: curvature_filename
     character(len=80)       :: header
     logical :: exists
-    real(kind=dp) :: time0, time1,file_version
-    real(kind=dp), parameter :: file_ver=1.0_dp
+    real(kind=dp) :: time0, time1, file_version
+    real(kind=dp), parameter :: file_ver = 1.0_dp
     ! Check that we haven't already done this.
-    if(allocated(band_curvature)) return
+    if (allocated(band_curvature)) return
 
     ! first try to read a effective mass file
 
-    curvature_filename=trim(seedname)//".ddome_bin"
+    curvature_filename = trim(seedname)//".ddome_bin"
 
-    if(on_root) inquire(file=curvature_filename,exist=exists)
-    call comms_bcast(exists,1)
+    if (on_root) inquire (file=curvature_filename, exist=exists)
+    call comms_bcast(exists, 1)
 
-    if(exists) then  ! good. We are reading from a velocity file
+    if (exists) then  ! good. We are reading from a velocity file
 
-       time0=io_time()
-       if(on_root) then
-          if(iprint>1) write(stdout,'(a)') ' '
-          if(iprint>1) write(stdout,'(a)') ' Reading band curvature from file:'//trim(curvature_filename)
-          curvature_unit=io_file_unit()
-             curvature_filename=trim(seedname)//".ddome_bin"
-             open(unit=curvature_unit,file=curvature_filename,status="old",form='unformatted',err=102)
-             read(curvature_unit) file_version
-             if( (file_version-file_ver)>0.001_dp) &
-                   call io_error('Error: Trying to read newer version of ddome_bin file. Update optados!')
-             read(curvature_unit) header
-             if(iprint>1) write(stdout,*) trim(header)
+      time0 = io_time()
+      if (on_root) then
+        if (iprint > 1) write (stdout, '(a)') ' '
+        if (iprint > 1) write (stdout, '(a)') ' Reading band curvature from file:'//trim(curvature_filename)
+        curvature_unit = io_file_unit()
+        curvature_filename = trim(seedname)//".ddome_bin"
+        open (unit=curvature_unit, file=curvature_filename, status="old", form='unformatted', err=102)
+        read (curvature_unit) file_version
+        if ((file_version - file_ver) > 0.001_dp) &
+          call io_error('Error: Trying to read newer version of ddome_bin file. Update optados!')
+        read (curvature_unit) header
+        if (iprint > 1) write (stdout, *) trim(header)
 
-       end if
-       ! Figure out how many kpoint should be on each node
-       call algor_dist_array(nkpoints,num_kpoints_on_node)
-       allocate(band_curvature(1:nbands,1:3,1:3,1:num_kpoints_on_node(my_node_id),1:nspins),stat=ierr)
-       if (ierr/=0) call io_error('Error: Problem allocating band_curvature in elec_read_band_curvature')
+      end if
+      ! Figure out how many kpoint should be on each node
+      call algor_dist_array(nkpoints, num_kpoints_on_node)
+      allocate (band_curvature(1:nbands, 1:3, 1:3, 1:num_kpoints_on_node(my_node_id), 1:nspins), stat=ierr)
+      if (ierr /= 0) call io_error('Error: Problem allocating band_curvature in elec_read_band_curvature')
 
-       if(on_root) then
-          do inodes=1,num_nodes-1
-             do ik=1,num_kpoints_on_node(inodes)
-                do is=1,nspins
-                   do ib=1,nbands
-                      do i=1,3
-                         do j=1,3
-                            read(curvature_unit) band_curvature(ib,i,j,ik,is)
-                         end do
-                       end do
-                    end do
-                 end do
-              end do
-             call comms_send(band_curvature(1,1,1,1,1),nbands*3*3*nspins*num_kpoints_on_node(inodes),inodes)
-          end do
-          do ik=1,num_kpoints_on_node(0)
-             do is=1,nspins
-                do ib=1,nbands
-                   do i=1,3
-                      do j=1,3
-                         read(curvature_unit) band_curvature(ib,i,j,ik,is)
-                      end do
-                   end do
+      if (on_root) then
+        do inodes = 1, num_nodes - 1
+          do ik = 1, num_kpoints_on_node(inodes)
+            do is = 1, nspins
+              do ib = 1, nbands
+                do i = 1, 3
+                  do j = 1, 3
+                    read (curvature_unit) band_curvature(ib, i, j, ik, is)
+                  end do
                 end do
-             end do
+              end do
+            end do
           end do
-       end if
+          call comms_send(band_curvature(1, 1, 1, 1, 1), nbands*3*3*nspins*num_kpoints_on_node(inodes), inodes)
+        end do
+        do ik = 1, num_kpoints_on_node(0)
+          do is = 1, nspins
+            do ib = 1, nbands
+              do i = 1, 3
+                do j = 1, 3
+                  read (curvature_unit) band_curvature(ib, i, j, ik, is)
+                end do
+              end do
+            end do
+          end do
+        end do
+      end if
 
-       if(.not. on_root) then
-          call comms_recv(band_curvature(1,1,1,1,1),nbands*3*3*nspins*num_kpoints_on_node(my_node_id),root_id)
-       end if
+      if (.not. on_root) then
+        call comms_recv(band_curvature(1, 1, 1, 1, 1), nbands*3*3*nspins*num_kpoints_on_node(my_node_id), root_id)
+      end if
 
-       if(on_root) close (unit=curvature_unit)
+      if (on_root) close (unit=curvature_unit)
 
-       ! Convert all band curvatures to eV Ang^2
-       band_curvature=band_curvature*bohr2ang*bohr2ang*H2eV
+      ! Convert all band curvatures to eV Ang^2
+      band_curvature = band_curvature*bohr2ang*bohr2ang*H2eV
 
-
-       time1=io_time()
-       if(on_root.and.iprint>1) write(stdout,'(1x,a40,f11.3,a)') 'Time to read band curvature',time1-time0,' (sec)'
+      time1 = io_time()
+      if (on_root .and. iprint > 1) write (stdout, '(1x,a40,f11.3,a)') 'Time to read band curvature', time1 - time0, ' (sec)'
 
     end if
 
@@ -476,8 +473,8 @@ contains
           call io_error('Error: Trying to read newer version of ome_bin file. Update optados!')
         read (gradient_unit) omefile_header
         if (iprint > 1) write (stdout, '(1x,a)') trim(omefile_header)
-      endif
-    endif
+      end if
+    end if
 
     ! Figure out how many kpoints should be on each node
     call algor_dist_array(nkpoints, num_kpoints_on_node)
@@ -515,7 +512,7 @@ contains
             end do
           end do
         end do
-      endif
+      end if
 
     else ! sane file format
 
@@ -555,7 +552,7 @@ contains
       write (stdout, '(1x,a59,f11.3,a8)') &
            '+ Time to read Optical Matrix Elements                   &
            &      ', time1 - time0, ' (sec) +'
-    endif
+    end if
 
     return
 
@@ -567,105 +564,101 @@ contains
   !=========================================================================
   subroutine elec_read_foptical_mat
     !=========================================================================
-    ! Read the .fem_bin file in paralell if appropriate. These are the 
+    ! Read the .fem_bin file in paralell if appropriate. These are the
     ! free electron matrix at each kpoint.
     !-------------------------------------------------------------------------
     ! Arguments: None
     !-------------------------------------------------------------------------
-    ! Parent module variables: foptical_mat,nspins,nbands                                       
+    ! Parent module variables: foptical_mat,nspins,nbands
     !-------------------------------------------------------------------------
-    ! Modules used:  See below                                                 
+    ! Modules used:  See below
     !-------------------------------------------------------------------------
-    ! Key Internal Variables: None                                                      
+    ! Key Internal Variables: None
     !-------------------------------------------------------------------------
-    ! Necessary conditions: None     
+    ! Necessary conditions: None
     !-------------------------------------------------------------------------
-    ! Known Worries: None                                              
+    ! Known Worries: None
     !-------------------------------------------------------------------------
     ! Written by  V Chang                                             Nov 2020
     !=========================================================================
-    use od_comms, only : on_root, my_node_id, num_nodes, root_id,&
+    use od_comms, only: on_root, my_node_id, num_nodes, root_id,&
          & comms_recv, comms_send
-    use od_io,    only : io_time, filename_len, seedname, stdout, io_file_unit,&
+    use od_io, only: io_time, filename_len, seedname, stdout, io_file_unit,&
          & io_error
-    use od_cell,  only : num_kpoints_on_node,nkpoints
-    use od_constants,only : bohr2ang, H2eV
-    use od_parameters, only : legacy_file_format,iprint,devel_flag
-    use od_algorithms, only : algor_dist_array
+    use od_cell, only: num_kpoints_on_node, nkpoints
+    use od_constants, only: bohr2ang, H2eV
+    use od_parameters, only: legacy_file_format, iprint, devel_flag
+    use od_algorithms, only: algor_dist_array
     implicit none
 
-    integer :: gradient_unit,i,ib,jb,is,ik,inodes,ierr
+    integer :: gradient_unit, i, ib, jb, is, ik, inodes, ierr
     character(filename_len) :: gradient_filename
     character(len=80)       :: header
-    real(kind=dp) :: time0, time1,file_version
-    real(kind=dp), parameter :: file_ver=1.0_dp
-
+    real(kind=dp) :: time0, time1, file_version
+    real(kind=dp), parameter :: file_ver = 1.0_dp
 
     ! Check that we haven't already done this.
 
-    if(allocated(foptical_mat)) return
+    if (allocated(foptical_mat)) return
 
-    time0=io_time()
-    if(on_root) then
-       gradient_unit=io_file_unit()
-       gradient_filename=trim(seedname)//".fem_bin"
-       if(iprint>1) write(stdout,'(1x,a)') 'Reading foptical matrix elements from file: '//trim(gradient_filename)
-          open(unit=gradient_unit,file=gradient_filename,status="old",form='unformatted',err=102)
-          read(gradient_unit) file_version
-       if( (file_version-file_ver)>0.001_dp) &
-                           call io_error('Error: Trying to read newer version of fem_bin file. Update optados!')
-          read(gradient_unit) header
-       if(iprint>1) write(stdout,'(1x,a)') trim(header)
-    endif
-
+    time0 = io_time()
+    if (on_root) then
+      gradient_unit = io_file_unit()
+      gradient_filename = trim(seedname)//".fem_bin"
+      if (iprint > 1) write (stdout, '(1x,a)') 'Reading foptical matrix elements from file: '//trim(gradient_filename)
+      open (unit=gradient_unit, file=gradient_filename, status="old", form='unformatted', err=102)
+      read (gradient_unit) file_version
+      if ((file_version - file_ver) > 0.001_dp) &
+        call io_error('Error: Trying to read newer version of fem_bin file. Update optados!')
+      read (gradient_unit) header
+      if (iprint > 1) write (stdout, '(1x,a)') trim(header)
+    end if
 
     ! Figure out how many kpoints should be on each node
-    call algor_dist_array(nkpoints,num_kpoints_on_node)
-    allocate(foptical_mat(1:nbands+1,1:nbands+1,1:3,1:num_kpoints_on_node(my_node_id),1:nspins),stat=ierr)
-    if (ierr/=0) call io_error('Error: Problem allocating foptical_mat in elec_read_optical_mat')
-    if(on_root) then
-          do inodes=1,num_nodes-1
-             do ik=1,num_kpoints_on_node(inodes)
-                do is=1,nspins
-                   read(gradient_unit) (((foptical_mat(ib,jb,i,ik,is),ib=1,nbands+1)&
-                        ,jb=1,nbands+1),i=1,3)
-                end do
-             end do
-             call comms_send(foptical_mat(1,1,1,1,1),(nbands+1)*(nbands+1)*3*nspins*num_kpoints_on_node(inodes),inodes)
+    call algor_dist_array(nkpoints, num_kpoints_on_node)
+    allocate (foptical_mat(1:nbands + 1, 1:nbands + 1, 1:3, 1:num_kpoints_on_node(my_node_id), 1:nspins), stat=ierr)
+    if (ierr /= 0) call io_error('Error: Problem allocating foptical_mat in elec_read_optical_mat')
+    if (on_root) then
+      do inodes = 1, num_nodes - 1
+        do ik = 1, num_kpoints_on_node(inodes)
+          do is = 1, nspins
+            read (gradient_unit) (((foptical_mat(ib, jb, i, ik, is), ib=1, nbands + 1) &
+                                   , jb=1, nbands + 1), i=1, 3)
           end do
-          do ik=1,num_kpoints_on_node(0)
-             do is=1,nspins
-                read(gradient_unit) (((foptical_mat(ib,jb,i,ik,is),ib=1,nbands+1),jb=1,nbands+1),i=1,3)
-             end do
-          end do 
+        end do
+        call comms_send(foptical_mat(1, 1, 1, 1, 1), (nbands + 1)*(nbands + 1)*3*nspins*num_kpoints_on_node(inodes), inodes)
+      end do
+      do ik = 1, num_kpoints_on_node(0)
+        do is = 1, nspins
+          read (gradient_unit) (((foptical_mat(ib, jb, i, ik, is), ib=1, nbands + 1), jb=1, nbands + 1), i=1, 3)
+        end do
+      end do
     end if
 
-    if(.not. on_root) then
-       call comms_recv(foptical_mat(1,1,1,1,1),(nbands+1)*(nbands+1)*3*nspins*num_kpoints_on_node(my_node_id),root_id)
+    if (.not. on_root) then
+      call comms_recv(foptical_mat(1, 1, 1, 1, 1), (nbands + 1)*(nbands + 1)*3*nspins*num_kpoints_on_node(my_node_id), root_id)
     end if
 
-    if(on_root) close (unit=gradient_unit)
-   ! Convert all band gradients to eV Ang
-    if(legacy_file_format) then
-       foptical_mat=foptical_mat*bohr2ang*bohr2ang*H2eV
+    if (on_root) close (unit=gradient_unit)
+    ! Convert all band gradients to eV Ang
+    if (legacy_file_format) then
+      foptical_mat = foptical_mat*bohr2ang*bohr2ang*H2eV
     else
-       foptical_mat=foptical_mat*bohr2ang*H2eV
+      foptical_mat = foptical_mat*bohr2ang*H2eV
     end if
 
-    time1=io_time()
-    if(on_root.and.iprint>1) then
-       write(stdout,'(1x,a59,f11.3,a8)') &
-            '+ Time to read Free electron Matrix Elements                   &
-            &      ',time1-time0,' (sec) +'
-    endif
+    time1 = io_time()
+    if (on_root .and. iprint > 1) then
+      write (stdout, '(1x,a59,f11.3,a8)') &
+           '+ Time to read Free electron Matrix Elements                   &
+           &      ', time1 - time0, ' (sec) +'
+    end if
 
     return
-
 
 102 call io_error('Error: Problem opening fem_bin file in read_band_foptical_mat')
 
   end subroutine elec_read_foptical_mat
-
 
   !=========================================================================
   subroutine elec_read_band_energy !(band_energy,kpoint_r,kpoint_weight)
@@ -746,7 +739,7 @@ contains
     if (.not. on_root) then
       allocate (num_electrons(nspins), stat=ierr)
       if (ierr /= 0) stop " Error : cannot allocate num_electrons"
-    endif
+    end if
     call comms_bcast(num_electrons(1), nspins)
     call comms_bcast(nkpoints, 1)
     call comms_bcast(nbands, 1)
@@ -792,7 +785,7 @@ contains
         read (dummy(str_pos + 7:), *) dum_i1, kpoint_r(1, ik), kpoint_r(2, ik), kpoint_r(3, ik), kpoint_weight(ik)
         do i = 1, 3
           all_kpoints(i, iall_kpoints) = kpoint_r(i, ik)
-        enddo
+        end do
         iall_kpoints = iall_kpoints + 1
         do is = 1, nspins
           read (band_unit, *) dummy
@@ -809,12 +802,12 @@ contains
         kpoint_grid_dim = kpoint_mp_grid
       else
         call cell_find_MP_grid(all_kpoints, nkpoints, kpoint_grid_dim)
-      endif
+      end if
       if (.not. compute_band_gap) then
         deallocate (all_kpoints, stat=ierr)
         if (ierr /= 0) call io_error('Error: Problem deallocating all_kpoints in read_band_energy')
-      endif
-    endif
+      end if
+    end if
 
     if (.not. on_root) then
       call comms_recv(band_energy(1, 1, 1), nbands*nspins*num_kpoints_on_node(my_node_id), root_id)
@@ -834,7 +827,7 @@ contains
     else
       spin_polarised = .true.
       electrons_per_state = 1.0_dp
-    endif
+    end if
 
     time1 = io_time()
     if (on_root .and. iprint > 1) write (stdout, '(1x,a40,f11.3,a)') 'Time to read band energies  ', time1 - time0, ' (sec)'
@@ -925,7 +918,7 @@ contains
     if (.not. on_root) then
       allocate (num_electrons(nspins), stat=ierr)
       if (ierr /= 0) stop " Error : cannot allocate num_electrons"
-    endif
+    end if
     call comms_bcast(num_electrons(1), nspins)
     call comms_bcast(nkpoints, 1)
     call comms_bcast(nbands, 1)
@@ -993,7 +986,7 @@ contains
         kpoint_grid_dim = kpoint_mp_grid
       else
         call cell_find_MP_grid(all_kpoints, nkpoints, kpoint_grid_dim)
-      endif
+      end if
 
       if ((.not. compute_band_gap) .and. (.not. pdis)) then
         deallocate (all_kpoints, stat=ierr)
@@ -1002,9 +995,9 @@ contains
         if (ierr /= 0) call io_error('Error: Problem deallocating all_band_energy in read_band_energy')
         deallocate (all_kpoint_weight, stat=ierr)
         if (ierr /= 0) call io_error('Error: Problem deallocating all_kpoint_weight in read_band_energy')
-      endif
+      end if
 
-    endif
+    end if
 
     if (.not. on_root) then
       call comms_recv(band_energy(1, 1, 1), nbands*nspins*num_kpoints_on_node(my_node_id), root_id)
@@ -1024,7 +1017,7 @@ contains
     else
       spin_polarised = .true.
       electrons_per_state = 1.0_dp
-    endif
+    end if
 
     time1 = io_time()
     if (on_root .and. iprint > 1) write (stdout, '(1x,a40,f11.3,a)') 'Time to read band energies  ', time1 - time0, ' (sec)'
@@ -1090,7 +1083,7 @@ contains
           call io_error('Error: Trying to read newer version of elnes_bin file. Update optados!')
         read (elnes_unit) elnesfile_header
         if (iprint > 1) write (stdout, '(1x,a)') trim(elnesfile_header)
-      endif
+      end if
 
       read (elnes_unit) elnes_mwab%norbitals
       read (elnes_unit) elnes_mwab%nbands
@@ -1192,7 +1185,7 @@ contains
           end do
         end do
       end if
-    endif
+    end if
 
     if (.not. on_root) then
       call comms_recv(elnes_mat(1, 1, 1, 1, 1), elnes_mwab%norbitals*elnes_mwab%nbands*3*nspins* &
@@ -1201,14 +1194,14 @@ contains
 
     if (on_root) close (elnes_unit)
 
-    call  elec_elnes_find_channel_names()
+    call elec_elnes_find_channel_names()
 
     time1 = io_time()
     if (on_root .and. iprint > 1) then
       write (stdout, '(1x,a59,f11.3,a8)') &
            '+ Time to read Elnes Matrix Elements                     &
            &      ', time1 - time0, ' (sec) +'
-    endif
+    end if
 
     return
 
@@ -1224,14 +1217,13 @@ contains
     ! fill in some extra indexing data
     ! Moved from within elec_read_elnes_mat when I made od2od
     ! AJM 5/12/2019
-    use od_io, only : io_error
+    use od_io, only: io_error
     implicit none
 
     integer :: loop
 
- 
-   !  elnes_mwab is a module variable so don't declare.
-   
+    !  elnes_mwab is a module variable so don't declare.
+
     do loop = 1, elnes_mwab%norbitals
       if (elnes_orbital%am_channel(loop) == 1) then
         elnes_orbital%am_channel(loop) = 0
@@ -1281,15 +1273,14 @@ contains
       elseif (elnes_orbital%am_channel(loop) == 16) then
         elnes_orbital%am_channel(loop) = 3
         elnes_orbital%am_channel_name(loop) = 'fx(yy-zz)'
-     else
+      else
         call io_error(' Error : unknown angular momentum state in elec_elnes_find_channel_names')
-      endif
+      end if
     end do
-    
+
   end subroutine elec_elnes_find_channel_names
 
-
-    !=========================================================================
+  !=========================================================================
   subroutine elec_elnes_find_channel_numbers
     !=========================================================================
     !
@@ -1300,50 +1291,50 @@ contains
     ! differently. To keep consistent we convert to CASTEP's numbering scheme
     ! before we write out.
     ! AJM 5/12/2019
-    use od_io, only : io_error
+    use od_io, only: io_error
     implicit none
 
     integer :: loop
 
     do loop = 1, elnes_mwab%norbitals
-       selectcase(trim(elnes_orbital%am_channel_name(loop)))
-       case('s')
-          elnes_orbital%am_channel(loop) = 1
-       case('px')
-          elnes_orbital%am_channel(loop) = 2
-       case('py')
-          elnes_orbital%am_channel(loop) = 3
-       case('pz')
-          elnes_orbital%am_channel(loop) = 4
-       case('dzz')
-          elnes_orbital%am_channel(loop) = 5
-       case('dzy')
-          elnes_orbital%am_channel(loop) = 6
-       case('dzx')
-          elnes_orbital%am_channel(loop) = 7
-       case('dxx-yy')
-          elnes_orbital%am_channel(loop) = 8
-       case('dxy')
-          elnes_orbital%am_channel(loop) = 9
-       case('fxxx')
-          elnes_orbital%am_channel(loop) = 10
-       case('fyyy')
-          elnes_orbital%am_channel(loop) = 11
-       case('fzzz')
-          elnes_orbital%am_channel(loop) = 12
-       case('fxyz')
-          elnes_orbital%am_channel(loop) = 13
-       case('fz(xx-yy)')
-          elnes_orbital%am_channel(loop) = 14
-       case('fy(zz-xx)')
-          elnes_orbital%am_channel(loop) = 15
-       case('fx(yy-zz)')
-          elnes_orbital%am_channel(loop) = 16
-       case default
-          call io_error(' Error : unknown angular momentum state in elec_elnes_find_channel_numbers')
-       end select
-    enddo
-    
+      selectcase (trim(elnes_orbital%am_channel_name(loop)))
+      case ('s')
+        elnes_orbital%am_channel(loop) = 1
+      case ('px')
+        elnes_orbital%am_channel(loop) = 2
+      case ('py')
+        elnes_orbital%am_channel(loop) = 3
+      case ('pz')
+        elnes_orbital%am_channel(loop) = 4
+      case ('dzz')
+        elnes_orbital%am_channel(loop) = 5
+      case ('dzy')
+        elnes_orbital%am_channel(loop) = 6
+      case ('dzx')
+        elnes_orbital%am_channel(loop) = 7
+      case ('dxx-yy')
+        elnes_orbital%am_channel(loop) = 8
+      case ('dxy')
+        elnes_orbital%am_channel(loop) = 9
+      case ('fxxx')
+        elnes_orbital%am_channel(loop) = 10
+      case ('fyyy')
+        elnes_orbital%am_channel(loop) = 11
+      case ('fzzz')
+        elnes_orbital%am_channel(loop) = 12
+      case ('fxyz')
+        elnes_orbital%am_channel(loop) = 13
+      case ('fz(xx-yy)')
+        elnes_orbital%am_channel(loop) = 14
+      case ('fy(zz-xx)')
+        elnes_orbital%am_channel(loop) = 15
+      case ('fx(yy-zz)')
+        elnes_orbital%am_channel(loop) = 16
+      case default
+        call io_error(' Error : unknown angular momentum state in elec_elnes_find_channel_numbers')
+      end select
+    end do
+
   end subroutine elec_elnes_find_channel_numbers
 
   !=========================================================================
@@ -1403,7 +1394,7 @@ contains
           call io_error('Error: Trying to read newer version of pdos_bin file. Update optados!')
         read (pdos_in_unit) pdosfile_header
         if (iprint > 1) write (stdout, '(1x,a)') trim(pdosfile_header)
-      endif
+      end if
 
       read (pdos_in_unit) pdos_mwab%nkpoints
       read (pdos_in_unit) pdos_mwab%nspins
@@ -1416,7 +1407,7 @@ contains
         write (stdout, *) "pdos_mwab%norbitals= ", pdos_mwab%norbitals
         write (stdout, *) "pdos_mwab%nbands= ", pdos_mwab%nbands
         write (stdout, *) "   **** ***** *****  ***** ***** *****  ***** ***** *****  "
-      endif
+      end if
 
       allocate (pdos_orbital%species_no(pdos_mwab%norbitals), stat=ierr)
       if (ierr /= 0) call io_error(" Error : cannot allocate pdos_orbital")
@@ -1467,26 +1458,26 @@ contains
                 write (stdout, *) " ***** F U L L _ D E B U G _ P D O S _ W E I G H T S ***** "
                 write (stdout, *) ib, ik, is
                 write (stdout, *) "   **** ***** *****  ***** ***** *****  ***** ***** *****  "
-              endif
+              end if
               read (pdos_in_unit) pdos_weights(1:pdos_mwab%norbitals, ib, ik, is)
-            enddo
-          enddo
-        enddo
+            end do
+          end do
+        end do
         call comms_send(pdos_weights(1, 1, 1, 1), pdos_mwab%norbitals*pdos_mwab%nbands* &
                         nspins*num_kpoints_on_node(inodes), inodes)
-     end do
+      end do
 
       do ik = 1, num_kpoints_on_node(0)
-         ! The kpoint number, followed by the kpoint-vector
+        ! The kpoint number, followed by the kpoint-vector
         read (pdos_in_unit) dummyi, dummyr1, dummyr2, dummyr3
         do is = 1, pdos_mwab%nspins
           read (pdos_in_unit) dummyi ! this is the spin number
           read (pdos_in_unit) nbands_occ(ik, is)
           do ib = 1, nbands_occ(ik, is)
             read (pdos_in_unit) pdos_weights(1:pdos_mwab%norbitals, ib, ik, is)
-          enddo
-        enddo
-      enddo
+          end do
+        end do
+      end do
     end if
 
     if (.not. on_root) then
@@ -1561,7 +1552,7 @@ contains
           call io_error('Error: Trying to read newer version of pdos_bin file. Update optados!')
         read (pdos_in_unit) header
         if (iprint > 1) write (stdout, '(1x,a)') trim(header)
-      endif
+      end if
 
       read (pdos_in_unit) pdos_mwab%nkpoints
       read (pdos_in_unit) pdos_mwab%nspins
@@ -1574,7 +1565,7 @@ contains
         write (stdout, *) "pdos_mwab%norbitals= ", pdos_mwab%norbitals
         write (stdout, *) "pdos_mwab%nbands= ", pdos_mwab%nbands
         write (stdout, *) "   **** ***** *****  ***** ***** *****  ***** ***** *****  "
-      endif
+      end if
 
       allocate (pdos_orbital%species_no(pdos_mwab%norbitals), stat=ierr)
       if (ierr /= 0) call io_error(" Error : cannot allocate pdos_orbital")
@@ -1640,13 +1631,13 @@ contains
           read (pdos_in_unit) all_nbands_occ(dummyk, is)
           do ib = 1, all_nbands_occ(dummyk, is)
             read (pdos_in_unit) all_pdos_weights(1:pdos_mwab%norbitals, ib, dummyk, is)
-          enddo
-        enddo
-      enddo
+          end do
+        end do
+      end do
 
       close (pdos_in_unit)
 
-    endif
+    end if
 
     call comms_bcast(all_pdos_weights(1, 1, 1, 1), size(all_pdos_weights))
 

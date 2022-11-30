@@ -38,7 +38,7 @@ program optados
   use od_io, only: io_get_seedname, io_time, io_date, io_file_unit,&! Functions
        & stdout, stderr, seedname                                            ! Variables
   use od_parameters, only: param_read, param_write_header, param_Dist, param_write, &
-    param_dealloc, pdos, pdis, dos, jdos, core, optics, photo, iprint, param_write_atomic_coord
+                           param_dealloc, pdos, pdis, dos, jdos, core, optics, photo, iprint, param_write_atomic_coord
   use od_cell, only: cell_calc_lattice, cell_report_parameters, cell_dist
   use od_electronic, only: elec_read_band_energy, elec_read_band_energy_ordered, elec_report_parameters
   use od_dos, only: dos_calculate
@@ -47,7 +47,7 @@ program optados
   use od_pdos, only: pdos_calculate
   use od_pdis, only: pdis_calculate
   use od_optics, only: optics_calculate
-  use od_photo,  only : photo_calculate
+  use od_photo, only: photo_calculate
   use od_build, only: build_info
   implicit none
 
@@ -84,7 +84,7 @@ program optados
       stat = 'old'
     else
       stat = 'replace'
-    endif
+    end if
     pos = 'append'
 
     stdout = io_file_unit()
@@ -130,7 +130,7 @@ program optados
       write (stdout, *) ' '
       write (stdout, *) ' '
     end if
-  endif
+  end if
   !-------------------------------------------------------------------------!
 
   !-------------------------------------------------------------------------!
@@ -147,7 +147,7 @@ program optados
       write (stdout, *) ' '
       write (stdout, *) ' '
     end if
-  endif
+  end if
   !-------------------------------------------------------------------------!
 
   !-------------------------------------------------------------------------!
@@ -165,7 +165,7 @@ program optados
       write (stdout, *) ' '
       write (stdout, *) ' '
     end if
-  endif
+  end if
   !-------------------------------------------------------------------------!
 
   !-------------------------------------------------------------------------!
@@ -182,7 +182,7 @@ program optados
       write (stdout, *) ' '
       write (stdout, *) ' '
     end if
-  endif
+  end if
   !-------------------------------------------------------------------------!
 
   !-------------------------------------------------------------------------!
@@ -198,27 +198,26 @@ program optados
       write (stdout, '(1x,a78)') '+============================================================================+'
       write (stdout, *) ' '
       write (stdout, *) ' '
-    endif
-  endif
+    end if
+  end if
   !-------------------------------------------------------------------------!
 
- !-------------------------------------------------------------------------!
+  !-------------------------------------------------------------------------!
   ! C A L L   P H O T O E M I S S I O N   R O U T I N E S
-  if(photo) then
-     time0=io_time()
-     call photo_calculate
-     time1=io_time()
-     if(on_root) then
-        write(stdout,'(1x,a78)') '|                                                                            |'
-        write(stdout,'(1x,a59,f11.3,a8)') &
-             '+ Time to calculate Photoemission                        ',time1-time0,' (sec) +'
-        write(stdout,'(1x,a78)') '+============================================================================+'
-        write(stdout,*) ' '
-        write(stdout,*) ' '
-     endif
-  endif
-    !-------------------------------------------------------------------------!
-
+  if (photo) then
+    time0 = io_time()
+    call photo_calculate
+    time1 = io_time()
+    if (on_root) then
+      write (stdout, '(1x,a78)') '|                                                                            |'
+      write (stdout, '(1x,a59,f11.3,a8)') &
+        '+ Time to calculate Photoemission                        ', time1 - time0, ' (sec) +'
+      write (stdout, '(1x,a78)') '+============================================================================+'
+      write (stdout, *) ' '
+      write (stdout, *) ' '
+    end if
+  end if
+  !-------------------------------------------------------------------------!
 
   !-------------------------------------------------------------------------!
   ! C A L L   J D O S   R O U T I N E S
@@ -233,12 +232,10 @@ program optados
       write (stdout, '(1x,a78)') '+============================================================================+'
       write (stdout, *) ' '
       write (stdout, *) ' '
-    endif
+    end if
 
-  endif
+  end if
   !-------------------------------------------------------------------------!
-
-
 
   !-------------------------------------------------------------------------!
   ! F I N A L I S E
@@ -279,11 +276,10 @@ contains
     write (*, *) " Andrew J. Morris, R. J. Nicholls, C. J. Pickard and J. R. Yates", trim(copyright)
     write (*, *) " Compiled with "//trim(build_info%compiler)//" on "//trim(build_info%compile_date)&
          & //" at "//trim(build_info%compile_time)//"."
-    write(*, *) " Compile type: "//trim(build_info%build_type)//", "//trim(build_info%comms_arch)
-    write(*, *) " From source "//trim(build_info%build)//" submitted on "//trim(build_info%source_date)&
-         &//" at " //trim(build_info%source_time)//"."
- 
- 
+    write (*, *) " Compile type: "//trim(build_info%build_type)//", "//trim(build_info%comms_arch)
+    write (*, *) " From source "//trim(build_info%build)//" submitted on "//trim(build_info%source_date)&
+         &//" at "//trim(build_info%source_time)//"."
+
     stop
   end subroutine version_output
 
