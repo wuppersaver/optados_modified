@@ -61,7 +61,7 @@ contains
       write (stdout, '(1x,a78)') '+                 Projected Density Of States Calculation                    +'
       write (stdout, '(1x,a78)') '+============================================================================+'
       write (stdout, '(1x,a78)')
-    endif
+    end if
 
     ! read in the pdos weights
     call elec_pdos_read
@@ -77,7 +77,7 @@ contains
 
     if (on_root .and. (iprint > 2)) then
       call pdos_report_projectors
-    endif
+    end if
 
     ! now compute the weighted dos
     call dos_utils_calculate(matrix_weights, dos_partial)
@@ -86,7 +86,7 @@ contains
     if (set_efermi_zero .and. .not. efermi_set) call dos_utils_set_efermi
     if (on_root) then
       call pdos_write
-    endif
+    end if
 
   end subroutine pdos_calculate
 
@@ -110,10 +110,10 @@ contains
     !       do ispecies_num=1,maxval(atoms_species_num)
     !          do  ispecies=1,num_species
     !             write(*,*) ispecies,ispecies_num,iam,iproj,projection_array(ispecies,ispecies_num,iam,iproj)
-    !          enddo
-    !       enddo
-    !    enddo
-    ! enddo
+    !          end do
+    !       end do
+    !    end do
+    ! end do
     ! write(*,*) "======================================================================================"
 
     if (shortcut) then
@@ -128,14 +128,14 @@ contains
           end_iproj = num_proj
         else
           end_iproj = ifile*10
-        endif
+        end if
 
         write (start_iproj_name, '(I20.4)') start_iproj
         write (end_iproj_name, '(I20.4)') end_iproj
         name = trim(seedname)//'.pdos.proj-'//trim(adjustl(start_iproj_name))//'-'//trim(adjustl(end_iproj_name))//'.dat'
         call write_proj_to_file(start_iproj, end_iproj, name)
-      enddo
-    endif
+      end do
+    end if
   end subroutine pdos_write
 
   subroutine write_proj_to_file(start_proj, stop_proj, name)
@@ -165,7 +165,7 @@ contains
       E_shift = E - efermi
     else
       E_shift = E
-    endif
+    end if
 
     write (string, '(I4,"(x,es14.7)")') (stop_proj - start_proj) + 1
 
@@ -195,12 +195,12 @@ contains
             if (projection_array(ispecies, ispecies_num, iam, iproj) == 1) then
               write (pdos_file, '(1a,a1,a13,i3,a18,16x,a2,24x,1a)') "#", "|", proj_symbol(ispecies), &
                    &ispecies_num, channel_to_am(iam), 'Up', '|'
-            endif
-            enddo
-          enddo
-        enddo
+            end if
+            end do
+          end do
+        end do
         write (pdos_file, '(1a,a)') '#', '+----------------------------------------------------------------------------+'
-      enddo
+      end do
       do iproj = start_proj, stop_proj
         write (pdos_file, '(1a,a1,a12,i4,a10,50x,a1)') '#', '|', ' Column: ', iproj + num_proj, ' contains:', '|'
         write (pdos_file, '(1a,a1,a16,10x,a14,5x,a15,16x,a1)') '#', '|', ' Atom ', ' AngM Channel ', ' Spin Channel ', '|'
@@ -210,12 +210,12 @@ contains
               if (projection_array(ispecies, ispecies_num, iam, iproj) == 1) then
                 write (pdos_file, '(1a,a1,a13,i3,a18,15x,a4,23x,1a)') "#", "|", proj_symbol(ispecies), &
                      &ispecies_num, channel_to_am(iam), 'Down', '|'
-              endif
-            enddo
-          enddo
-        enddo
+              end if
+            end do
+          end do
+        end do
         write (pdos_file, '(1a,a)') '#', '+----------------------------------------------------------------------------+'
-      enddo
+      end do
 
       dos_partial(:, 2, :) = -dos_partial(:, 2, :)
       do idos = 1, dos_nbins
@@ -232,17 +232,17 @@ contains
               if (projection_array(ispecies, ispecies_num, iam, iproj) == 1) then
                 write (pdos_file, '(1a,a1,a13,i3,a18,42x,a1)') "#", "|", proj_symbol(ispecies), &
                      &ispecies_num, channel_to_am(iam), '|'
-              endif
-            enddo
-          enddo
-        enddo
+              end if
+            end do
+          end do
+        end do
         write (pdos_file, '(1a,a)') '#', '+----------------------------------------------------------------------------+'
-      enddo
+      end do
 
       do idos = 1, dos_nbins
         write (pdos_file, '(es14.7,'//trim(string)//')') E_shift(idos), (dos_partial(idos, 1, i), i=start_proj, stop_proj)
       end do
-    endif
+    end if
 
     close (pdos_file)
 
@@ -273,12 +273,12 @@ contains
             if (projection_array(ispecies, ispecies_num, iam, iproj) == 1) then
               write (stdout, '(1x,a1,a13,i3,a18,42x,a1)') "|", proj_symbol(ispecies), &
                 ispecies_num, channel_to_am(iam), '|' !, " |  DEBUG :",  ispecies ,iam
-            endif
-          enddo
-        enddo
-      enddo
+            end if
+          end do
+        end do
+      end do
       write (stdout, '(1x,a)') '+----------------------------------------------------------------------------+'
-    enddo
+    end do
   end subroutine pdos_report_projectors
 
 !!$!===============================================================================
@@ -313,16 +313,16 @@ contains
 !!$    if(orbital(i)%rank_in_species>species_count(orbital(i)%species_no)) then
 !!$      species_count(orbital(i)%species_no)=orbital(i)%rank_in_species
 !!$      ion_count=ion_count+1
-!!$    endif
+!!$    end if
 !!$    orbital(i)%ion_no=ion_count
-!!$   enddo
+!!$   end do
 !!$
 !!$   num_atoms=sum(species_count(:))
 !!$
 !!$   if(allocated(species_count)) then
 !!$     deallocate(species_count, stat=ierr)
 !!$     if(ierr/=0) stop " Error : cannot deallocate  species_count"
-!!$   endif
+!!$   end if
 !!$  end subroutine count_atoms
 
 !!$  subroutine general_write_pdos
@@ -361,8 +361,8 @@ contains
 !!$          if(sum(projection_array(:,:,iam,iproj))>1) then
 !!$             ! Yes it does contain more than one atom
 !!$             projector_to_file=.true.
-!!$          endif
-!!$       enddo
+!!$          end if
+!!$       end do
 !!$
 !!$       if(projector_to_file) then
 !!$          ! Then let's write out this projector and move on to the next one
@@ -376,7 +376,7 @@ contains
 !!$             call write_proj_to_file(start_proj, iproj, filename)
 !!$             start_proj=iproj+1 ! Reset start counter, and we've written the current one.
 !!$             cycle projectors
-!!$          endif
+!!$          end if
 !!$
 !!$          write(*,*) "For proj:", iproj, "there is more than one atom"
 !!$          write(*,*) "Hence we're writing projectors to files"
@@ -387,7 +387,7 @@ contains
 !!$          call write_proj_to_file(iproj,iproj,filename)
 !!$          start_proj=iproj+1 ! Reset start counter, and we've written the current one.
 !!$          cycle projectors
-!!$       endif
+!!$       end if
 !!$
 !!$       ! Since we're not writing just one projector to the file, we're going to have to work out
 !!$       ! how many projectors there are going to be in this file.
@@ -400,10 +400,10 @@ contains
 !!$                   species_num=ispecies_num
 !!$                   write(*,*) "Projector ",iproj," is Species ", ispecies, " Rank ", ispecies_num
 !!$                   exit scan
-!!$                endif
-!!$             enddo
-!!$          enddo
-!!$       enddo scan
+!!$                end if
+!!$             end do
+!!$          end do
+!!$       end do scan
 !!$
 !!$       ! First time through we just put the info about this projector into the registry
 !!$       if(iproj==start_proj) then
@@ -426,7 +426,7 @@ contains
 !!$          start_proj=iproj ! Since we haven't written the current projector yet
 !!$          last_species=species
 !!$          last_species_num=species_num
-!!$       endif
+!!$       end if
 !!$
 !!$       ! If this is our last loop, then we'd better write the last on out too.
 !!$       if(iproj==num_proj) then
@@ -436,9 +436,9 @@ contains
 !!$          write(*,*) "So write out Projectors ", start_proj," to ", iproj, " to file ",&
 !!$               & trim(seedname)//".pdos."//trim(filename)//".dat"
 !!$          call write_proj_to_file(start_proj, iproj, filename)
-!!$       endif
+!!$       end if
 !!$
-!!$    enddo projectors
+!!$    end do projectors
 !!$    return
 !!$  end subroutine general_write_pdos
 

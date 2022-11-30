@@ -103,7 +103,7 @@ module  od_conv
     if(.not.allocated(optical_mat)) then
        write(stdout,*) " Allocating optical_mat."
        allocate(optical_mat(nbands,nbands,3,nkpoints,nspins))
-    endif
+    end if
     
     open(unit=ome_unit, form='formatted', file=trim(seedname)//".ome_fmt")
 
@@ -249,7 +249,7 @@ module  od_conv
     if(.not.allocated(band_gradient)) then
        write(0,*) " Allocating band_gradient"
        allocate(band_gradient(nbands,3,nkpoints,nspins))
-    endif
+    end if
     
     open(unit=dome_unit, form='formatted', file=trim(seedname)//".dome_fmt")
     
@@ -443,9 +443,9 @@ module  od_conv
        !      write(stdout,*) "   **** ***** *****  ***** ***** *****  ***** ***** *****  "
              
              write(pdos_in_unit,'('//trim(string2)//')') pdos_weights(1:pdos_mwab%norbitals,ib,ik,is)
-          enddo
-       enddo
-    enddo
+          end do
+       end do
+    end do
            
     close(pdos_in_unit)
 
@@ -543,9 +543,9 @@ module  od_conv
        !      write(stdout,*) "   **** ***** *****  ***** ***** *****  ***** ***** *****  "
              
              read(pdos_in_unit,'('//trim(string2)//')') (pdos_weights(io,ib,ik,is), io=1,pdos_mwab%norbitals)
-          enddo
-       enddo
-    enddo
+          end do
+       end do
+    end do
            
     close(pdos_in_unit)
 
@@ -831,7 +831,7 @@ module  od_conv
     if(.not.allocated(band_gradient)) then
        write(0,*) " Allocating band_gradient"
        allocate(band_gradient(nbands,3,nkpoints,nspins))
-    endif
+    end if
     
     do loop=1,nbands
        band_gradient(loop,:,:,:)=real(optical_mat(loop,loop,:,:,:),dp)
@@ -856,7 +856,7 @@ module  od_conv
     if(.not.allocated(optical_mat)) then
        write(0,*) " Allocating optical_mat"
        allocate(optical_mat(nbands,nbands,3,nkpoints,nspins))
-    endif
+    end if
 
     ! Pad with zeros.
     optical_mat=0.0_dp
@@ -965,7 +965,7 @@ program od2od
 
   if (num_nodes /= 1) then
     call io_error('od2od can only be used in serial...')
-  endif
+  end if
 
   write(stdout,*) 
   write(stdout,*) "+--------------------------------- JOB CONTROL ------------------------------+"
@@ -1078,7 +1078,7 @@ program od2od
      else
          write(stdout,*)
          write(stdout,*) "                No point in taking up disk space unnecessarily, eh ?"
-     endif 
+     end if 
   case default
      call io_error('Unknown Output File format speccified')
   end select write_output

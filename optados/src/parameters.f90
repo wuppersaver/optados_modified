@@ -223,7 +223,7 @@ contains
           dos = .true.; pdos = .true.; jdos = .true.; optics = .true.; core = .true.
         else
           call io_error('Error: value of task unrecognised in param_read')
-        endif
+        end if
       end do
       deallocate (task_string, stat=ierr)
       if (ierr /= 0) call io_error('Error: param_read - deallocation failed for task_string')
@@ -249,7 +249,7 @@ contains
         !          fixed=.true.;adaptive=.true.;linear=.true.
       else
         call io_error('Error: value of broadening unrecognised in param_read')
-      endif
+      end if
     end if
     if (compare_dos .or. compare_jdos) then
       fixed = .true.; adaptive = .true.; linear = .true.
@@ -257,7 +257,7 @@ contains
 
     if (.not. pdis .and. .not. (fixed .or. adaptive .or. linear .or. quad)) then ! Pick a default
       adaptive = .true.
-    endif
+    end if
 
     kpoint_mp_grid = -999
     call param_get_keyword_vector('kpoint_mp_grid', found, 3, i_value=kpoint_mp_grid)
@@ -283,7 +283,7 @@ contains
       efermi_choice = "optados"
     else
       efermi_choice = "file"
-    endif
+    end if
     call param_get_efermi('efermi', found, efermi_choice, efermi_user)
 
     ! Force all Gaussians to be greater than the width of a bin. When using numerical_indos
@@ -525,15 +525,15 @@ contains
 
     if (dos_min_energy .ge. dos_max_energy) then
       call io_error('Error: must have dos_min_energy < dos_max_energy')
-    endif
+    end if
 
     if ((dos_nbins > 0) .and. (dos_spacing > 0.0_dp)) then
       call io_error('Error: only one of dos_nbins and dos_spacing may be set')
-    endif
+    end if
 
     if ((dos_nbins < 0) .and. (dos_spacing < 0.0_dp)) then
       dos_spacing = 0.005 ! Roughly similar to LinDOS
-    endif
+    end if
 
     return
 
@@ -556,13 +556,13 @@ contains
       ic = ichar(atoms_label(nsp) (1:1))
       if ((ic .ge. ichar('a')) .and. (ic .le. ichar('z'))) &
         atoms_label(nsp) (1:1) = char(ic + ichar('Z') - ichar('z'))
-    enddo
+    end do
 
     do nsp = 1, num_species
       ic = ichar(atoms_symbol(nsp) (1:1))
       if ((ic .ge. ichar('a')) .and. (ic .le. ichar('z'))) &
         atoms_symbol(nsp) (1:1) = char(ic + ichar('Z') - ichar('z'))
-    enddo
+    end do
 
     ! Length unit (ang --> Ang, bohr --> Bohr)
     ic = ichar(length_unit(1:1))
@@ -636,7 +636,7 @@ contains
           write (stdout, '(1x,a)') '|   Site       Fractional Coordinate          Cartesian Coordinate (Ang)     |'
         else
           write (stdout, '(1x,a)') '|   Site       Fractional Coordinate          Cartesian Coordinate (Bohr)    |'
-        endif
+        end if
         write (stdout, '(1x,a)') '+----------------------------------------------------------------------------+'
         do nsp = 1, num_species
           do nat = 1, atoms_species_num(nsp)
@@ -656,9 +656,9 @@ contains
           write (stdout, '(1x,a1,16x,a2,16x,i4,a3,i4,16x,i4,11x,a)') '|', atoms_symbol(nsp), &
                & atom_counter, "to", atom_counter + atoms_species_num(nsp) - 1, atoms_species_num(nsp), "|"
           atom_counter = atom_counter + atoms_species_num(nsp)
-        enddo
+        end do
         write (stdout, '(1x,a)') '+----------------------------------------------------------------------------+'
-      endif
+      end if
     else
       if (iprint > 1) write (stdout, '(25x,a)') 'No atom positions read'
     end if
@@ -685,7 +685,7 @@ contains
     !       write(stdout,'(1x,a)') '|   Site       Fractional Coordinate          Cartesian Coordinate (Ang)     |'
     !    else
     !       write(stdout,'(1x,a)') '|   Site       Fractional Coordinate          Cartesian Coordinate (Bohr)    |'
-    !    endif
+    !    end if
     !    write(stdout,'(1x,a)') '+----------------------------------------------------------------------------+'
     !    do nsp=1,num_species
     !       do nat=1,atoms_species_num(nsp)
@@ -706,7 +706,7 @@ contains
 !!$          write(stdout,'(1x,a)') '| k-point      Fractional Coordinate        Cartesian Coordinate (Ang^-1)    |'
 !!$       else
 !!$          write(stdout,'(1x,a)') '| k-point      Fractional Coordinate        Cartesian Coordinate (Bohr^-1)   |'
-!!$       endif
+!!$       end if
 !!$       write(stdout,'(1x,a)') '+----------------------------------------------------------------------------+'
 !!$       !       do nkp=1,nkpoints
 !!$       !          write(stdout,'(1x,a1,i6,1x,3F10.5,3x,a1,1x,3F10.5,4x,a1)') '|',&
@@ -724,44 +724,44 @@ contains
       write (stdout, '(1x,a78)') '|  Output Density of States                  :  True                         |'
     else
       write (stdout, '(1x,a78)') '|  Output Density of States                  :  False                        |'
-    endif
+    end if
     if (pdos) then
       write (stdout, '(1x,a78)') '|  Output Partial Density of States          :  True                         |'
     else
       write (stdout, '(1x,a78)') '|  Output Partial Density of States          :  False                        |'
-    endif
+    end if
     if (pdis) then
       write (stdout, '(1x,a78)') '|  Output Projected Bandstructure            :  True                         |'
     else
       write (stdout, '(1x,a78)') '|  Output Projected Bandstructure            :  False                        |'
-    endif
+    end if
     if (jdos) then
       write (stdout, '(1x,a78)') '|  Output Joint Density of States            :  True                         |'
     else
       write (stdout, '(1x,a78)') '|  Output Joint Density of States            :  False                        |'
-    endif
+    end if
     if (optics) then
       write (stdout, '(1x,a78)') '|  Output Optical Response                   :  True                         |'
     else
       write (stdout, '(1x,a78)') '|  Output Optical Response                   :  False                        |'
-    endif
+    end if
     if (core) then
       write (stdout, '(1x,a78)') '|  Output Core-level Spectra                 :  True                         |'
     else
       write (stdout, '(1x,a78)') '|  Output Core-level Spectra                 :  False                        |'
-    endif
+    end if
     !Photoemission
     if(photo) then
        write(stdout,'(1x,a78)') '|  Photoemission Calculation                 :   True                         |'
     else
        write(stdout,'(1x,a78)') '|  Photoemission Calculation                 :   False                        |'
-    endif
+    end if
     write (stdout, '(1x,a46,2x,i3,26x,a1)') '|  iprint level                              :', iprint, '|'
     if (legacy_file_format) then
       write (stdout, '(1x,a78)') '|  Use CASTEP < 6.0 file format              :  True                         |'
     else
       write (stdout, '(1x,a78)') '|  Use CASTEP < 6.0 file format              :  False                        |'
-    endif
+    end if
     write (stdout, '(1x,a78)') '+-------------------------------- UNITS -------------------------------------+'
     write (stdout, '(1x,a46,2x,a4,25x,a1)') '|  Length Unit                               :', trim(length_unit), '|'
 
@@ -770,18 +770,18 @@ contains
         write (stdout, '(1x,a78)') '|  J/P/DOS units                             :  electrons eV^-1 Ang^-3       |'
       else
         write (stdout, '(1x,a78)') '|  J/P/DOS units                             :  electrons eV^-1              |'
-      endif
-    endif
+      end if
+    end if
 
     write (stdout, '(1x,a78)') '+--------------------------SPECTRAL PARAMETERS ------------------------------+'
     if (fixed) then
       write (stdout, '(1x,a78)') '|  Fixed Width Smearing                      :  True                         |'
       write (stdout, '(1x,a46,1x,1F10.5,20x,a1)') '|  Smearing Width                            :', fixed_smearing, '|'
-    endif
+    end if
     if (adaptive) then
       write (stdout, '(1x,a78)') '|  Adaptive Width Smearing                   :  True                         |'
       write (stdout, '(1x,a46,1x,1F10.5,20x,a1)') '|  Adaptive Smearing ratio                   :', adaptive_smearing, '|'
-    endif
+    end if
     if (linear) &
       write (stdout, '(1x,a78)') '|  Linear Extrapolation                      :  True                         |'
     write (stdout, '(1x,a46,1x,1F10.5,20x,a1)') '|  Smearing Width                            :', linear_smearing, '|'
@@ -792,7 +792,7 @@ contains
     if (hybrid_linear) then
       write (stdout, '(1x,a78)') '|  Hybrid Linear Correction                     :  True                         |'
       write (stdout, '(1x,a46,2x,F10.8,19x,a1)') '|  Hybrid Linear Gradient Tolerance             :', hybrid_linear_grad_tol, '|'
-    endif
+    end if
     if (numerical_intdos) &
       write (stdout, '(1x,a78)') '|  Numerical Integration of P/DOS            :  True                         |'
     if (dos_per_volume) &
@@ -809,22 +809,22 @@ contains
         write (stdout, '(1x,a78)') '|  Fermi energy                              :  Read from file               |'
       elseif (index(efermi_choice, 'insulator') .gt. 0) then
         write (stdout, '(1x,a78)') '|  Fermi energy                              :  Assume insulator (n_elec/2)  |'
-      endif
+      end if
     else ! It is set
       write (stdout, '(1x,a46,1x,1F10.5,20x,a1)') '|  Fermi energy                              :', efermi_user, '|'
-    endif
+    end if
 
     if (compute_band_energy) then
       write (stdout, '(1x,a78)') '|  Compute the band energy                   :  True                         |'
     else
       write (stdout, '(1x,a78)') '|  Compute the band energy                   :  False                        |'
-    endif
+    end if
 
     if (compute_band_gap) then
       write (stdout, '(1x,a78)') '|  Compute the band gap                      :  True                         |'
     else
       write (stdout, '(1x,a78)') '|  Compute the band gap                      :  False                        |'
-    endif
+    end if
 
     if (optics) then
       write (stdout, '(1x,a78)') '+-------------------------------- OPTICS ------------------------------------+'
@@ -847,13 +847,13 @@ contains
           & optics_drude_broadening, '|'
       else
         write (stdout, '(1x,a78)') '|  Include Intraband Contribution            :  False                        |'
-      endif
+      end if
       if (optics_lossfn_broadening) then
         write (stdout, '(1x,a78)') '|  Include Loss Function Broadening          :  True                         |'
         write (stdout, '(1x,a46,1x,1f10.4,20x,a1)') '|  Gaussian Width                            :', optics_lossfn_gaussian, '|'
       else
         write (stdout, '(1x,a78)') '|  Include Loss Function Broadening          :  False                        |'
-      endif
+      end if
       if (scissor_op > 1.0e-10_dp) &
         write (stdout, '(1x,a46,1x,1f10.4,20x,a1)') '|  Scissor Operator (eV)                     :', scissor_op, '|'
     end if
@@ -865,14 +865,14 @@ contains
         write (stdout, '(1x,a78)') '|  Geometry for Core Calculation             :  Polarised                    |'
         write (stdout, '(1x,a47,2x,f6.2,2x,f6.2,2x,f6.2,3x,a4)') '|  Direction of q-vector (un-normalised)     : ' &
           , core_qdir(1:3), '   |'
-      endif
+      end if
       if (index(core_type, 'absorption') > 0) then
         write (stdout, '(1x,a78)') '|  Absorption or Emission Spectrum           :  Absorption                   |'
       elseif (index(core_type, 'emission') > 0) then
         write (stdout, '(1x,a78)') '|  Absorption or Emission Spectrum           :  Emission                     |'
       else
         write (stdout, '(1x,a78)') '|  Absorption or Emission Spectrum           :  Both                         |'
-      endif
+      end if
       if (core_LAI_broadening) then
         write (stdout, '(1x,a78)') '|  Include lifetime and Instrument Broadening:  True                         |'
         write (stdout, '(1x,a46,1x,1f10.4,20x,a1)') '|  Gaussian Width                            :', LAI_gaussian_width, '|'
@@ -881,7 +881,7 @@ contains
         write (stdout, '(1x,a46,1x,1f10.4,20x,a1)') '|  Lorentzian Offset                         :', LAI_lorentzian_offset, '|'
       else
         write (stdout, '(1x,a78)') '|  Include lifetime and Instrument Broadening:  False                        |'
-      endif
+      end if
     end if
 
     write (stdout, '(1x,a78)') '+----------------------------------------------------------------------------+'
@@ -934,7 +934,7 @@ contains
       tot_num_lines = tot_num_lines + 1
       if (.not. dummy(1:1) == '!' .and. .not. dummy(1:1) == '#') then
         if (len(trim(dummy)) > 0) num_lines = num_lines + 1
-      endif
+      end if
 
     end do
 
@@ -1007,7 +1007,7 @@ contains
           .and. in_data(loop) (itmp:itmp) /= ' ') cycle
       if (found) then
         call io_error('Error: Found keyword '//trim(keyword)//' more than once in input file')
-      endif
+      end if
       found = .true.
       dummy = in_data(loop) (kl + 1:)
       in_data(loop) (1:maxlen) = ' '
@@ -1027,8 +1027,8 @@ contains
           l_value = .false.
         else
           call io_error('Error: Problem reading logical keyword '//trim(keyword))
-        endif
-      endif
+        end if
+      end if
       if (present(i_value)) read (dummy, *, err=220, end=220) i_value
       if (present(r_value)) read (dummy, *, err=220, end=220) r_value
     end if
@@ -1072,7 +1072,7 @@ contains
           .and. in_data(loop) (itmp:itmp) /= ' ') cycle
       if (found) then
         call io_error('Error: Found keyword '//trim(keyword)//' more than once in input file')
-      endif
+      end if
       found = .true.
       dummy = in_data(loop) (kl + 1:)
       in_data(loop) (1:maxlen) = ' '
@@ -1132,7 +1132,7 @@ contains
       if (in == 0 .or. in > 1) cycle
       if (found) then
         call io_error('Error: Found keyword '//trim(keyword)//' more than once in input file')
-      endif
+      end if
       found = .true.
       dummy = in_data(loop) (kl + 1:)
       in_data(loop) (1:maxlen) = ' '
@@ -1148,7 +1148,7 @@ contains
       if (present(l_value)) then
         ! I don't think we need this. Maybe read into a dummy charater
         ! array and convert each element to logical
-      endif
+      end if
       if (present(i_value)) read (dummy, *, err=230, end=230) (i_value(i), i=1, length)
       if (present(r_value)) read (dummy, *, err=230, end=230) (r_value(i), i=1, length)
     end if
@@ -1187,7 +1187,7 @@ contains
       if (in == 0 .or. in > 1) cycle
       if (found) then
         call io_error('Error: Found keyword '//trim(keyword)//' more than once in input file')
-      endif
+      end if
       found = .true.
       dummy = in_data(loop) (kl + 1:)
       dummy = adjustl(dummy)
@@ -1210,7 +1210,7 @@ contains
           length = length + 1
         else
           exit
-        endif
+        end if
 
       end do
 
@@ -1260,7 +1260,7 @@ contains
       line_s = loop
       if (found_s) then
         call io_error('Error: Found '//trim(start_st)//' more than once in input file')
-      endif
+      end if
       found_s = .true.
     end do
 
@@ -1277,7 +1277,7 @@ contains
       line_e = loop
       if (found_e) then
         call io_error('Error: Found '//trim(end_st)//' more than once in input file')
-      endif
+      end if
       found_e = .true.
     end do
 
@@ -1297,8 +1297,8 @@ contains
     !          if ( blen /= rows+1 ) call io_error('Error: Wrong number of lines in block '//trim(keyword))
     !       else
     !          call io_error('Error: Wrong number of lines in block '//trim(keyword))
-    !       endif
-    !    endif
+    !       end if
+    !    end if
 
     if ((blen .ne. rows) .and. (blen .ne. rows + 1)) &
       call io_error('Error: Wrong number of lines in block '//trim(keyword))
@@ -1317,10 +1317,10 @@ contains
         lconvert = .true.
       else
         call io_error('Error: Units in block '//trim(keyword)//' not recognised')
-      endif
+      end if
       in_data(line_s) (1:maxlen) = ' '
       line_s = line_s + 1
-    endif
+    end if
 
     !    r_value=1.0_dp
     counter = 0
@@ -1331,7 +1331,7 @@ contains
       if (present(l_value)) then
         ! I don't think we need this. Maybe read into a dummy charater
         ! array and convert each element to logical
-      endif
+      end if
       if (present(i_value)) read (dummy, *, err=240, end=240) (i_value(i, counter), i=1, columns)
       if (present(r_value)) read (dummy, *, err=240, end=240) (r_value(i, counter), i=1, columns)
     end do
@@ -1339,8 +1339,8 @@ contains
     if (lconvert) then
       if (present(r_value)) then
         r_value = r_value*bohr2ang
-      endif
-    endif
+      end if
+    end if
 
     in_data(line_s:line_e) (1:maxlen) = ' '
 
@@ -1387,7 +1387,7 @@ contains
       line_s = loop
       if (found_s) then
         call io_error('Error: Found '//trim(start_st)//' more than once in input file')
-      endif
+      end if
       found_s = .true.
     end do
 
@@ -1404,7 +1404,7 @@ contains
       line_e = loop
       if (found_e) then
         call io_error('Error: Found '//trim(end_st)//' more than once in input file')
-      endif
+      end if
       found_e = .true.
     end do
 
@@ -1426,7 +1426,7 @@ contains
       !       write(stdout,*) trim(dummy)
       read (dummy, *, end=555) atsym, (atpos(i), i=1, 3)
       lunits = .false.
-    endif
+    end if
 
     if (rows <= 0) then !cope with empty blocks
       found = .false.
@@ -1482,7 +1482,7 @@ contains
       if (in == 0 .or. in > 1) cycle
       if (found) then
         call io_error('Error: Found keyword '//trim(keyword)//' more than once in input file')
-      endif
+      end if
       found = .true.
       dummy = in_data(loop) (kl + 1:)
       dummy = adjustl(dummy)
@@ -1619,7 +1619,7 @@ contains
       if (.not. on_root) then
         allocate (exclude_bands(num_exclude_bands), stat=ierr)
         if (ierr /= 0) call io_error('Error allocating exclude_bands in param_read')
-      endif
+      end if
       call comms_bcast(exclude_bands(1), num_exclude_bands)
     end if
 

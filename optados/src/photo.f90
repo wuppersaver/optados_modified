@@ -115,7 +115,7 @@ module od_photo
        write(stdout,'(1x,a78)') '+                             Photoemission Calculation                      +'
        write(stdout,'(1x,a78)') '+============================================================================+'
        write(stdout,'(1x,a78)') '|                                                                            |'
-    endif
+    end if
 
     if(.not.efermi_set) call dos_utils_set_efermi
 
@@ -404,10 +404,10 @@ module od_photo
       do N = 1, size(matrix_weights, 5)
         do N2 = 1, nbands
           dos_matrix_weights(N, N2, :, :) = matrix_weights(N2, N2, :, :, N)
-        enddo
-      enddo
+        end do
+      end do
       call dos_utils_calculate_at_e(efermi, dos_at_e, dos_matrix_weights, weighted_dos_at_e)
-    endif
+    end if
 
     if (on_root) then
       ! Calculate epsilon_2
@@ -421,7 +421,7 @@ module od_photo
         call calc_absorp
         call calc_reflect
 
-     endif
+     end if
 
        absorp_photo(N_energy,atom) = absorp(N_energy)
 
@@ -489,11 +489,11 @@ module od_photo
     num_occ = 0.0_dp
     do N_spin=1,nspins
         num_occ(N_spin) = num_electrons(N_spin)
-    enddo
+    end do
 
     if (electrons_per_state==2) then 
         num_occ(1) = num_occ(1)/2.0_dp
-    endif
+    end if
 
        N_geom=1
  
@@ -506,7 +506,7 @@ module od_photo
         q_weight=((qdir(1)**2)+(qdir(2)**2)+(qdir(3)**2))**0.5_dp
         if(q_weight<0.001_dp)&
         call io_error("Error:  please check optics_qdir, norm close to zero")
-    endif
+    end if
 
     if (index(optics_geom,'unpolar')>0) then 
         !TO CHANGE WHEN THE light_direction IS CORRECTED
@@ -519,13 +519,13 @@ module od_photo
             qdir1(1)=1.0_dp
             qdir1(2)=1.0_dp
             qdir1(3)=-(optics_qdir(1)+optics_qdir(2))/optics_qdir(3)
-        endif
+        end if
         qdir2(1)=(optics_qdir(2)*qdir1(3))-(optics_qdir(3)*qdir1(2))            
         qdir2(2)=(optics_qdir(3)*qdir1(1))-(optics_qdir(1)*qdir1(3))            
         qdir2(3)=(optics_qdir(1)*qdir1(2))-(optics_qdir(2)*qdir1(1))  
         q_weight1=((qdir1(1)**2)+(qdir1(2)**2)+(qdir1(3)**2))**0.5_dp
         q_weight2=((qdir2(1)**2)+(qdir2(2)**2)+(qdir2(3)**2))**0.5_dp
-    endif
+    end if
 
 
     N_in = 1  ! 0 = no inversion, 1 = inversion   
@@ -1320,7 +1320,7 @@ end subroutine calc_one_step_model
     ! band gradients too
     if(quad.or.linear.or.adaptive) then
        if(.not.allocated(band_gradient)) call elec_read_band_gradient
-    endif
+    end if
     !-------------------------------------------------------------------------------
 
     if(.not.efermi_set) call dos_utils_set_efermi
@@ -1331,43 +1331,43 @@ end subroutine calc_one_step_model
 
     if(fixed)then
               call calculate_delta('f',delta_temp)
-    endif
+    end if
     if(adaptive)then
               call calculate_delta('a',delta_temp)
 
-    endif
+    end if
     if(linear)then
           call calculate_delta('l',delta_temp)
-    endif
+    end if
 
     if(quad) then
        call io_error("quadratic broadening not implemented")
-    endif
+    end if
 
     time1=io_time()
     if(on_root.and.iprint>1) then
        write(stdout,'(1x,a59,f11.3,a8)') &
             '+ Time to calculate Joint Density of States              &
             &      ',time1-time0,' (sec) +'
-    endif
+    end if
     !-------------------------------------------------------------------------------
 
        if(dos_per_volume) then
        if(fixed) then
           jdos_fixed=jdos_fixed/cell_volume
-       endif
+       end if
        if(adaptive) then
           jdos_adaptive=jdos_adaptive/cell_volume
-       endif
+       end if
        if(linear) then
           jdos_linear=jdos_linear/cell_volume
-       endif
+       end if
 
        ! if(quad) then
        !    dos_quad=dos_quad/cell_volume
        !    intdos_quad=intdos_quad/cell_volume
-       ! endif
-    endif
+       ! end if
+    end if
 
   end subroutine jdos_utils_calculate_delta
 
@@ -1421,9 +1421,9 @@ end subroutine calc_one_step_model
     if(adaptive.or.hybrid_linear) then
        do i= 1,3
           sub_cell_length(i)=sqrt(recip_lattice(i,1)**2+recip_lattice(i,2)**2+recip_lattice(i,3)**2)*step(i)
-       enddo
+       end do
        adaptive_smearing_temp=adaptive_smearing*sum(sub_cell_length)/3.0_dp
-    endif
+    end if
 
     if(fixed) width=fixed_smearing
 
@@ -1435,18 +1435,18 @@ end subroutine calc_one_step_model
        delta_temp=0.0_dp
     if(iprint>1 .and. on_root) then
        write(stdout,'(1x,a78)') '+------------------------------ Calculate JDOS ------------------------------+'
-    endif
+    end if
 
     do ik=1,num_kpoints_on_node(my_node_id)
        if(iprint>1 .and. on_root) then
           if (mod(real(ik,dp),10.0_dp) == 0.0_dp) write(stdout,'(1x,a1,a38,i4,a3,i4,1x,a14,3x,a10)') ',', &
                &"Calculating k-point ", ik, " of", num_kpoints_on_node(my_node_id),'on this node.',"<-- JDOS |"
-       endif
+       end if
        do is=1,nspins
           occ_states: do ib=1,nbands
              if(num_exclude_bands>0) then
                 if(any(exclude_bands==ib)) cycle
-             endif
+             end if
              if(band_energy(ib,is,ik).ge.efermi) cycle occ_states
              unocc_states : do jb=1,nbands
                 if(band_energy(jb,is,ik).lt.efermi) cycle unocc_states
@@ -1472,7 +1472,7 @@ end subroutine calc_one_step_model
 
                     else
                        delta_temp(ib,jb,ik,is)=gaussian((band_energy(jb,is,ik)-band_energy(ib,is,ik))+scissor_op,width,E(idos))!&
-                    endif
+                    end if
 
              end do unocc_states
           end do occ_states
@@ -1482,7 +1482,7 @@ end subroutine calc_one_step_model
 
     if(iprint>1 .and. on_root) then
        write(stdout,'(1x,a78)') '+----------------------------------------------------------------------------+'
-    endif
+    end if
 
   end subroutine calculate_delta
 

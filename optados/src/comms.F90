@@ -133,7 +133,7 @@ contains
     if (error .ne. MPI_success) then
       print *, 'Error in comms_bcast_int'
       call comms_error
-    end if
+    endif
 #endif
 
     return
@@ -156,7 +156,7 @@ contains
     if (error .ne. MPI_success) then
       print *, 'Error in comms_bcast_real'
       call comms_error
-    end if
+    endif
 #endif
 
     return
@@ -179,7 +179,7 @@ contains
     if (error .ne. MPI_success) then
       print *, 'Error in comms_bcast_logical'
       call comms_error
-    end if
+    endif
 #endif
 
     return
@@ -202,7 +202,7 @@ contains
     if (error .ne. MPI_success) then
       print *, 'Error in comms_bcast_char'
       call comms_error
-    end if
+    endif
 #endif
 
     return
@@ -225,7 +225,7 @@ contains
     if (error .ne. MPI_success) then
       print *, 'Error in comms_bcast_cmplx'
       call comms_error
-    end if
+    endif
 #endif
 
     return
@@ -252,7 +252,7 @@ contains
     if (error .ne. MPI_success) then
       print *, 'Error in comms_send_logical'
       call comms_error
-    end if
+    endif
 #endif
 
     return
@@ -277,7 +277,7 @@ contains
     if (error .ne. MPI_success) then
       print *, 'Error in comms_send_int'
       call comms_error
-    end if
+    endif
 #endif
 
     return
@@ -302,7 +302,7 @@ contains
     if (error .ne. MPI_success) then
       print *, 'Error in comms_send_char'
       call comms_error
-    end if
+    endif
 #endif
 
     return
@@ -327,7 +327,7 @@ contains
     if (error .ne. MPI_success) then
       print *, 'Error in comms_send_real'
       call comms_error
-    end if
+    endif
 #endif
 
     return
@@ -352,7 +352,7 @@ contains
     if (error .ne. MPI_success) then
       print *, 'Error in comms_send_cmplx'
       call comms_error
-    end if
+    endif
 #endif
 
     return
@@ -380,7 +380,7 @@ contains
     if (error .ne. MPI_success) then
       print *, 'Error in comms_recv_logical'
       call comms_error
-    end if
+    endif
 #endif
 
     return
@@ -406,7 +406,7 @@ contains
     if (error .ne. MPI_success) then
       print *, 'Error in comms_recv_int'
       call comms_error
-    end if
+    endif
 #endif
 
     return
@@ -432,7 +432,7 @@ contains
     if (error .ne. MPI_success) then
       print *, 'Error in comms_recv_char'
       call comms_error
-    end if
+    endif
 #endif
 
     return
@@ -458,7 +458,7 @@ contains
     if (error .ne. MPI_success) then
       print *, 'Error in comms_recv_real'
       call comms_error
-    end if
+    endif
 #endif
 
     return
@@ -485,7 +485,7 @@ contains
     if (error .ne. MPI_success) then
       print *, 'Error in comms_recv_cmplx'
       call comms_error
-    end if
+    endif
 
 #endif
 
@@ -527,7 +527,7 @@ contains
     if (ierr /= 0) then
       print *, 'failure to allocate array_red in comms_reduce_int'
       call comms_error
-    end if
+    endif
 
     select case (op)
 
@@ -546,7 +546,7 @@ contains
     if (error .ne. MPI_success) then
       print *, 'Error in comms_reduce_real'
       call comms_error
-    end if
+    endif
 #endif
 
     return
@@ -570,7 +570,7 @@ contains
     if (ierr /= 0) then
       print *, 'failure to allocate array_red in comms_reduce_real'
       call comms_error
-    end if
+    endif
 
     select case (op)
 
@@ -594,7 +594,7 @@ contains
     if (error .ne. MPI_success) then
       print *, 'Error in comms_reduce_real'
       call comms_error
-    end if
+    endif
 #endif
 
     return
@@ -618,7 +618,7 @@ contains
     if (ierr /= 0) then
       print *, 'failure to allocate array_red in comms_reduce_cmplx'
       call comms_error
-    end if
+    endif
 
     select case (op)
 
@@ -637,7 +637,7 @@ contains
     if (error .ne. MPI_success) then
       print *, 'Error in comms_reduce_cmplx'
       call comms_error
-    end if
+    endif
 #endif
 
     return
