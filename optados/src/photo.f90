@@ -1505,13 +1505,13 @@ end subroutine calc_one_step_model
   use od_jdos_utils, only : jdos_utils_calculate!, jdos_nbins, E
 
     integer :: N,N_spin,n_eigen,n_eigen2,atom,ierr!,i,j,Gx,Gy
-    !integer :: angle, N_energy,transitions_den,transitions_num
+    integer :: angle, N_energy,transitions_den,transitions_num
     real(kind=dp) :: mean_te
     real(kind=dp),allocatable, dimension(:,:,:,:,:) :: te_tsm_temp
     real(kind=dp),allocatable, dimension(:,:,:,:) :: te_osm_temp
-    !real(kind=dp) :: width, norm_gaus,norm_vac,vac_g,transverse_g
-    !real(kind=dp) :: kbT,fermi_dirac,t_den, qe_factor
-    !logical :: fixed
+    real(kind=dp) :: width, norm_gaus,norm_vac,vac_g,transverse_g
+    real(kind=dp) :: kbT,fermi_dirac,t_den, qe_factor
+    logical :: fixed
 
      if (index(photo_model,'3step')>0) then
        allocate(te_tsm_temp(nbands,nbands,num_kpoints_on_node(my_node_id),nspins,max_atoms+1),stat=ierr)
