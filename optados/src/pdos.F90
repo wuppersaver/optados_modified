@@ -281,13 +281,13 @@ contains
     end do
   end subroutine pdos_report_projectors
 
-!!$!===============================================================================
+!!===============================================================================
 !!$ subroutine count_atoms(orbital,num_orbitals,num_atoms)
-!!$!===============================================================================
-!!$! From the program LinDOS (AJM)
-!!$! Take the orbial information and work out the number of atoms that the LCAO
-!!$! describe
-!!$!===============================================================================
+!!===============================================================================
+!! From the program LinDOS (AJM)
+!! Take the orbial information and work out the number of atoms that the LCAO
+!! describe
+!!===============================================================================
 !!$   use od_io, only : io_error
 !!$   implicit none
 !!$   integer, intent(in)            :: num_orbitals

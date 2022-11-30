@@ -380,7 +380,7 @@ contains
 
     efermi_set = .true.
 
-  endsubroutine dos_utils_set_efermi
+  end subroutine dos_utils_set_efermi
 
   !===============================================================================
   subroutine dos_utils_compute_dos_at_efermi
@@ -782,7 +782,7 @@ contains
     end do
 
     calc_band_energies = gband
-  endfunction calc_band_energies
+  end function calc_band_energies
 
   !===============================================================================
   function calc_efermi_from_intdos(INTDOS)
@@ -1828,4 +1828,4 @@ contains
 !    end if
   end subroutine dos_utils_merge_at_e
 
-endmodule od_dos_utils
+end module od_dos_utils

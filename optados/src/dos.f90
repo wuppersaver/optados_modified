@@ -308,4 +308,4 @@ contains
 
   end subroutine write_dos_xmgrace
 
-endmodule od_dos
+end module od_dos

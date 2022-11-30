@@ -81,10 +81,10 @@ contains
 
   subroutine core_prepare_matrix_elements
     use od_electronic, only: elnes_mat, elnes_mwab, nbands, nspins, num_electrons, electrons_per_state, &
-      efermi, band_energy
+                             efermi, band_energy
     use od_comms, only: my_node_id
     use od_cell, only: num_kpoints_on_node, cell_get_symmetry, &
-      num_crystal_symmetry_operations, crystal_symmetry_operations
+                       num_crystal_symmetry_operations, crystal_symmetry_operations
     use od_parameters, only: core_geom, core_qdir, core_type, legacy_file_format, devel_flag
     use od_io, only: io_error
 
@@ -168,8 +168,8 @@ contains
 
     use od_constants, only: bohr2ang, periodic_table_name, pi
     use od_parameters, only: dos_nbins, core_LAI_broadening, LAI_gaussian, LAI_gaussian_width, &
-      LAI_lorentzian, LAI_lorentzian_scale, LAI_lorentzian_width, LAI_lorentzian_offset, output_format, &
-      set_efermi_zero
+                             LAI_lorentzian, LAI_lorentzian_scale, LAI_lorentzian_width, LAI_lorentzian_offset, output_format, &
+                             set_efermi_zero
     use od_electronic, only: elnes_mwab, elnes_orbital, efermi, efermi_set, nspins
     use od_io, only: seedname, io_file_unit, io_error
     use od_dos_utils, only: E, dos_utils_set_efermi
@@ -658,7 +658,7 @@ contains
 
     use od_constants, only: pi, dp
     use od_parameters, only: LAI_lorentzian_width, LAI_lorentzian_scale, LAI_lorentzian_offset, &
-      LAI_gaussian_width, dos_nbins, LAI_gaussian, adaptive, linear, fixed
+                             LAI_gaussian_width, dos_nbins, LAI_gaussian, adaptive, linear, fixed
     use od_dos_utils, only: E
     use od_electronic, only: nspins, elnes_mwab, efermi
     use od_dos_utils, only: efermi_fixed, efermi_adaptive, efermi_linear

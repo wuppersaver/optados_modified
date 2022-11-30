@@ -196,4 +196,4 @@ contains
 
   end subroutine write_jdos_xmgrace
 
-endmodule od_jdos
+end module od_jdos

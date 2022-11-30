@@ -23,7 +23,7 @@
 !===============================================================================
 module od_optics
 
-  use od_constants, only: dp,epsilon_0,e_charge,e_mass,hbar,c_speed
+  use od_constants, only: dp, epsilon_0, e_charge, e_mass, hbar, c_speed
 
   implicit none
   private
@@ -81,12 +81,12 @@ contains
     !
 
     use od_electronic, only: optical_mat, elec_read_optical_mat, nbands, nspins, &
-      efermi, efermi_set, elec_dealloc_optical
+                             efermi, efermi_set, elec_dealloc_optical
     use od_cell, only: cell_volume, num_kpoints_on_node, kpoint_r
     use od_jdos_utils, only: jdos_utils_calculate
     use od_comms, only: on_root, my_node_id
     use od_parameters, only: optics_geom, adaptive, linear, fixed, optics_intraband, &
-      optics_drude_broadening
+                             optics_drude_broadening
     use od_dos_utils, only: dos_utils_calculate_at_e, dos_utils_set_efermi
     use od_io, only: stdout
 
@@ -110,7 +110,7 @@ contains
 
     ! Calculate weighted DOS at Ef for intraband term
     if (optics_intraband) then
-      allocate (dos_matrix_weights(size(matrix_weights, 5), nbands,num_kpoints_on_node(my_node_id), nspins))
+      allocate (dos_matrix_weights(size(matrix_weights, 5), nbands, num_kpoints_on_node(my_node_id), nspins))
       allocate (dos_at_e(3, nspins))
       allocate (weighted_dos_at_e(nspins, size(matrix_weights, 5)))
       weighted_dos_at_e = 0.0_dp
@@ -126,7 +126,7 @@ contains
 
     if (on_root) then
       ! Calculate epsilon_2
-      call calc_epsilon_2(weighted_jdos,weighted_dos_at_e)
+      call calc_epsilon_2(weighted_jdos, weighted_dos_at_e)
 
       ! Calculate epsilon_1
       call calc_epsilon_1
@@ -160,14 +160,14 @@ contains
     !***************************************************************
     use od_constants, only: dp
     use od_electronic, only: nbands, nspins, optical_mat, num_electrons, &
-      electrons_per_state, band_energy, efermi
+                             electrons_per_state, band_energy, efermi
     use od_cell, only: nkpoints, cell_volume, num_kpoints_on_node, cell_get_symmetry, &
-      num_crystal_symmetry_operations, crystal_symmetry_operations, kpoint_r
+                       num_crystal_symmetry_operations, crystal_symmetry_operations, kpoint_r
     use od_parameters, only: optics_geom, optics_qdir, legacy_file_format, scissor_op, devel_flag
     use od_io, only: io_error, stdout
     use od_comms, only: my_node_id
 
-    real(kind=dp), intent(out),allocatable, dimension(:, :, :, :, :) :: matrix_weights
+    real(kind=dp), intent(out), allocatable, dimension(:, :, :, :, :) :: matrix_weights
 
     real(kind=dp), dimension(3) :: qdir
     real(kind=dp), dimension(3) :: qdir1
@@ -496,7 +496,7 @@ contains
   end subroutine make_weights
 
   !***************************************************************
-  subroutine calc_epsilon_2(weighted_jdos,weighted_dos_at_e)
+  subroutine calc_epsilon_2(weighted_jdos, weighted_dos_at_e)
     !***************************************************************
     ! This subroutine calculates epsilon_2
 
@@ -973,7 +973,7 @@ contains
 
     use od_cell, only: nkpoints, cell_volume
     use od_parameters, only: optics_geom, optics_qdir, jdos_max_energy, scissor_op, output_format, &
-      optics_intraband, optics_lossfn_broadening
+                             optics_intraband, optics_lossfn_broadening
     use od_electronic, only: nbands, num_electrons, nspins
     use od_jdos_utils, only: jdos_nbins, E
     use od_io, only: seedname, io_file_unit, stdout
@@ -1497,4 +1497,4 @@ contains
 
   end subroutine write_optics_gnuplot
 
-endmodule od_optics
+end module od_optics
