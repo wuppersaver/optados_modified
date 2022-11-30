@@ -1,3 +1,4 @@
+!
 ! This file is part of OptaDOS
 !
 ! OptaDOS - For obtaining electronic structure properties based on
@@ -63,14 +64,15 @@ module od_cell
   ! Atom sites
   real(kind=dp), allocatable, public, save :: atoms_pos_frac(:, :, :)
   real(kind=dp), allocatable, public, save :: atoms_pos_cart(:, :, :)
-  real(kind=dp), allocatable, public, save :: atoms_pos_cart_photo(:, :)
   integer, allocatable, public, save :: atoms_species_num(:)
   character(len=maxlen), allocatable, public, save :: atoms_label(:)
   character(len=2), allocatable, public, save :: atoms_symbol(:)
   integer, public, save :: num_atoms
   integer, public, save :: num_species
-  character(len=maxlen), allocatable, public, save  :: atoms_label_tmp(:)
 
+  !Photoemission
+  character(len=maxlen),allocatable,  public, save  :: atoms_label_tmp(:)
+  real(kind=dp), allocatable,     public, save :: atoms_pos_cart_photo(:,:)
   !-------------------------------------------------------------------------!
   ! G L O B A L L Y   A V A I L A B L E   F U N C T I O N S
   public :: cell_find_MP_grid
@@ -92,7 +94,7 @@ contains
     ! do some more work to find out its sign
     ! A J Morris 29th September 2011
     !=========================================================================!
-    use od_io, only: io_error
+    use od_io, only: io_error, stdout
     implicit none
     integer, intent(out):: kpoint_grid_dim(1:3)
     integer, intent(in) :: num_kpts
@@ -105,11 +107,66 @@ contains
     real(kind=dp)    :: subtraction_tol, min_img, min_img2
     real(kind=dp)    :: min_img3, image, min_img_tol
 
+    integer :: iprint = 1 ! We can't use the global iprint as it's higher that this
+    ! in the module heirarchy.
+
+    ! Before time reversal symmetry we could any combintaion of kpoints
+    !--------------------X-------------
+    !                  0.25
+
+    ! We apply TR to make we have a complete set (and add periodic images)
+    !------X------X------X------X------
+    !    -0.75  -0.25   0.25  0.75
+    !
+    ! In this case the answer is easy. The minimim image is 0.5. Hence the grid is
+    ! 1/0.5 = 2x MP.
+
+    ! However the fun comes when shifts are applied. In this case applying TR makes
+    ! things more complicated. Consider the same grid with a +ve 0.05 shift.
+    !
+    ! Now CASTEP had to give us more kpoints
+    !------------------X------X------
+    !                0.20   0.70
+    !
+    ! We couldn't know that an offset had been applied so we appy TR and get
+    !   -0.70     -0.20  0.30    0.80
+    !----X-X-----X-X----X-X----X-X----
+    !  -0.80  -0.30  0.20   0.70
+    !
+    ! Hence now the 1st minimum image is 0.10, double the offset
+    !           the 2nd    "      "   is 0.40
+    !           the 3rd    "      "   is 0.50  the reciprocal of the MP grid
+
+    ! One can now image the case where the offset is 3/(4n) where n is the MP grid number.
+    ! in this case 3/8=0.375
+    !                 (shifted -0.75)  (shifted -0.25)
+    !------------------------X-------------X-------------------------
+    !                     -0.375        0.125
+    !
+    ! After TR
+    !                           -0.125        0.375
+    !------------------------X-----X------X-----X--------------------
+    !                     -0.375        0.125
+    !
+    ! So these are all equally spaced so algorithm sees this like the first example, easy, 0.25. Hence
+    ! grid is 1/0.25 = 4x MP. Wrong!
+    !
+    ! This is a known bug -- and without having the symmetry ops, we can't build the shifted 2xMP grid to
+    ! show that it is not a 4x MP.  AJM 15/9/2014
+
     ! When two numbers are the same
     subtraction_tol = epsilon(subtraction_tol)
     !write(*,*) "subtraction_tol=", subtraction_tol
     ! When one number is larger than another one
     min_img_tol = 0.000001_dp
+
+    if (iprint > 3) then
+      write (stdout, *)
+      write (stdout, *) "+----------------------------------------------------------------------------+"
+      write (stdout, *) "                              MP grid finder "
+      write (stdout, *)
+      write (stdout, *) " Kpoints found:", num_kpts
+    endif
 
     ! Add time reversal
     kpoint_TR(1:3, 1:num_kpts) = kpoints(1:3, 1:num_kpts)
@@ -120,13 +177,15 @@ contains
       ! Fold all kpoints between (-0.5,0.5]
       do ikpt = 1, num_kpts*2
         kpoint_TR(idim, ikpt) = kpoint_TR(idim, ikpt) - floor(kpoint_TR(idim, ikpt) + 0.5_dp)
-      end do
-    end do
+      enddo
+    enddo
 
     unique_kpoints = 0.0_dp
 
     over_dim: do idim = 1, 3
       ! Make unique
+      if (iprint > 3) write (stdout, *) " ----- Dimension ", idim, " -----"
+
       nunique_kpoints = 1
       unique_kpoints(idim, 1) = kpoint_TR(idim, 1)
 
@@ -135,21 +194,25 @@ contains
           if (abs(unique_kpoints(idim, iunique_kpoints) - kpoint_TR(idim, ikpt)) .le. subtraction_tol) then
             !We've seen this before
             cycle over_kpts
-          end if
-        end do
+          endif
+        enddo
         ! If we ended up here then, this is new
         nunique_kpoints = nunique_kpoints + 1
-        !  write(*,*) "ikpt= ",ikpt, "nunique_kpoints= ", nunique_kpoints
+        if (iprint > 3) write (stdout, *) " ikpt= ", ikpt, "nunique_kpoints= ", nunique_kpoints
         unique_kpoints(idim, nunique_kpoints) = kpoint_TR(idim, ikpt)
       end do over_kpts
+
+      if (iprint > 3) write (stdout, *) " Number of unique kpoints:", nunique_kpoints
 
       ! write(*,*) "------------------------ KPOINTS IN+TR+FOLDING+UNIQUE -----------"
       ! do i=1,nunique_kpoints
       !    write(*,*) i, idim, unique_kpoints(idim,i)
       ! enddo
       ! write(*,*) "-----------------------------------------------------------"
+      if (iprint > 3) write (stdout, *) " Looking for special cases for dimension:", idim
 
-      ! Look at special cases
+      ! Look at special cases. These are largely necessary because the general finder needs to get to
+      ! second nearest neighbour before it can work correctly. Except in the case of
       if (nunique_kpoints == 1) then
         ! There is only 1 k-point
         ! The shift is it's position (either 0 or 0.5)
@@ -170,13 +233,19 @@ contains
           if (present(kpoint_offset)) kpoint_offset(idim) = min_img/2
           kpoint_grid_dim(idim) = 1
           cycle over_dim
-        end if
+        endif
       elseif (nunique_kpoints == 3) then
         ! This is the case of a MP3 grid with a point at Gamma
-        if (present(kpoint_offset)) kpoint_offset(idim) = 0.0_dp
-        kpoint_grid_dim(idim) = 3
-        cycle over_dim
-      end if
+        !! AJM COMMENTED OUT AS A TEST AGAINST
+        !! HEXAGONAL CELLS
+        !      if(present(kpoint_offset)) kpoint_offset(idim)=0.0_dp
+        !      kpoint_grid_dim(idim)=3
+        !      cycle over_dim
+        continue
+      endif
+
+      if (iprint > 3) write (stdout, *) " Left the special-case kpoint finder for dimension:", idim
+      if (iprint > 3) write (stdout, *) " Now trying to use the general solver..."
 
       ! Get 1st, 2nd and 3rd minimum images
       ! Get 1st min image
@@ -185,8 +254,8 @@ contains
         do jkpt = ikpt + 1, nunique_kpoints
           image = abs(unique_kpoints(idim, ikpt) - unique_kpoints(idim, jkpt))
           if (image < min_img) min_img = image
-        end do
-      end do
+        enddo
+      enddo
       if (abs(min_img - huge(min_img)) .le. subtraction_tol) &
            & call io_error('cell_find_MP_grid: Failed to find a 1st min image')
 
@@ -196,8 +265,8 @@ contains
         do jkpt = ikpt, nunique_kpoints
           image = abs(unique_kpoints(idim, ikpt) - unique_kpoints(idim, jkpt))
           if ((image < min_img2) .and. image > min_img + min_img_tol) min_img2 = image
-        end do
-      end do
+        enddo
+      enddo
       if (abs(min_img2 - huge(min_img2)) .le. subtraction_tol) &
            & call io_error('cell_find_MP_grid: Failed to find a 2nd min image')
 
@@ -207,28 +276,50 @@ contains
         do jkpt = ikpt, nunique_kpoints
           image = abs(unique_kpoints(idim, ikpt) - unique_kpoints(idim, jkpt))
           if ((image < min_img3) .and. image > min_img2 + min_img_tol) min_img3 = image
-        end do
-      end do
-      if (abs(min_img3 - huge(min_img3)) .le. subtraction_tol) &
-           & call io_error('cell_find_MP_grid: Failed to find a 3rd min image')
+        enddo
+      enddo
+      if (abs(min_img3 - huge(min_img3)) .le. subtraction_tol) then
+        ! It's possible in CASTEP 6 and 7 to have 3 kpoints only for a 5 MP grid
+        ! the specieal case solver then got confused.
+        if (abs(2.0_dp*min_img - min_img2) < min_img_tol) then
+          ! If 1stMI==2ndMI then 1/1stMP is the grid density and we're still ok. Carry on.
+          ! we'll catch this scenario further down the code.
+          if (iprint > 3) write (stdout, *) " Couldn't find a third minimum image, but since we don't think"
+          if (iprint > 3) write (stdout, *) " there's an offset, it looks like a", 1.0_dp/min_img, " kpoint grid"
+          continue
+        else
+          call io_error('cell_find_MP_grid: Failed to find a 3rd min image')
+        endif
+      endif
 
-      !  write(*,*) "Images", min_img, min_img2, min_img3, 1.0_dp/min_img
+      if (iprint > 3) then
+        write (stdout, *) " Min images for dimension:", idim
+        write (stdout, *) " 1st:", min_img
+        write (stdout, *) " 2nd:", min_img2
+        write (stdout, *) " 3rd:", min_img3
+        write (stdout, *) " 1st^-1:", 1.0_dp/min_img
+      endif
 
       if (abs(2.0_dp*min_img - min_img2) < min_img_tol) then
         ! If 1stMI==2ndMI then 1/1stMP is the grid density
         if (present(kpoint_offset)) kpoint_offset(idim) = 0.0_dp
         kpoint_grid_dim(idim) = int(1.0_dp/min_img)
+        ! WARNING could also have a shifted grid with a perfect shift 3/(4n)
+        ! this would be a known bug
       else
         ! If 1stMI.ne.2ndMI then 1/3rdMP is the grid density
         ! and 1stMI/2 is the shift
         if (present(kpoint_offset)) kpoint_offset(idim) = min_img/2.0_dp
         kpoint_grid_dim(idim) = int(1.0_dp/min_img3)
-      end if
+      endif
 
-    end do over_dim
+    enddo over_dim
 
-    ! write(*,*) "kpoint_grid_dim= ", kpoint_grid_dim
+    if (iprint > 3) write (stdout, *) " Conclusion = kpoint_grid_dim: ", kpoint_grid_dim
     ! if(present(kpoint_offset))  write(*,*) "kpoint_offset= ",  kpoint_offset
+
+    if (iprint > 3) &
+         & write (stdout, *) "+----------------------------------------------------------------------------+"
   end subroutine cell_find_MP_grid
   !=========================================================================!
 
@@ -294,7 +385,7 @@ contains
         read (sym_file) crystal_symmetry_operations
         read (sym_file) crystal_symmetry_disps
       end if
-    end if
+    endif
 
     call comms_bcast(num_crystal_symmetry_operations, 1)
     if (num_crystal_symmetry_operations > 0) then
@@ -303,7 +394,7 @@ contains
         if (ierr /= 0) call io_error(" Error : cannot allocate crystal_symmetry_operations in cell_get_symmetry")
         allocate (crystal_symmetry_disps(3, num_crystal_symmetry_operations), stat=ierr)
         if (ierr /= 0) call io_error(" Error : cannot allocate crystal_symmetry_disps in cell_get_symmetry")
-      end if
+      endif
       call comms_bcast(crystal_symmetry_operations(1, 1, 1), 9*num_crystal_symmetry_operations)
       call comms_bcast(crystal_symmetry_disps(1, 1), 3*num_crystal_symmetry_operations)
     end if
@@ -313,8 +404,11 @@ contains
 100 call io_error('Error: Problem opening sym file in cell_get_symmetry')
 
   end subroutine cell_get_symmetry
+  !=========================================================================!
 
+  !=========================================================================!
   subroutine cell_read_cell
+    !=========================================================================!
     use od_constants, only: bohr2ang
     use od_io, only: io_file_unit, io_error, seedname, maxlen
     use od_algorithms, only: utility_cart_to_frac, utility_frac_to_cart, utility_lowercase
@@ -329,6 +423,7 @@ contains
     logical           :: found_e, found_s, frac
     character(len=maxlen) :: dummy
     character(len=maxlen), allocatable :: ctemp(:)
+    character(len=maxlen), allocatable :: atoms_label_tmp(:)
     logical           :: lconvert
 
     character(len=maxlen), allocatable :: in_data(:)
@@ -346,7 +441,7 @@ contains
       tot_num_lines = tot_num_lines + 1
       if (.not. dummy(1:1) == '!' .and. .not. dummy(1:1) == '#') then
         if (len(trim(dummy)) > 0) num_lines = num_lines + 1
-      end if
+      endif
 
     end do
 
@@ -392,11 +487,11 @@ contains
         frac = .false.
       else
         cycle
-      end if
+      endif
       line_s = loop
       if (found_s) then
         call io_error('Error: Found %block'//trim(keyword)//' more than once in cell file')
-      end if
+      endif
       found_s = .true.
     end do
 
@@ -415,7 +510,7 @@ contains
       line_e = loop
       if (found_e) then
         call io_error('Error: Found %block'//trim(keyword)//' more than once in cell file')
-      end if
+      endif
       found_e = .true.
     end do
 
@@ -437,7 +532,7 @@ contains
     elseif (index(dummy, 'bohr') .ne. 0) then
       lconvert = .true.
       line_s = line_s + 1
-    end if
+    endif
 
     num_atoms = line_e - 1 - (line_s + 1) + 1
     allocate (atoms_pos_frac_tmp(3, num_atoms), stat=ierr)
@@ -465,10 +560,10 @@ contains
     end if
 
     call cell_get_real_lattice
+
     if (frac) then
       do loop = 1, num_atoms
         call utility_frac_to_cart(atoms_pos_frac_tmp(:, loop), atoms_pos_cart_tmp(:, loop), real_lattice)
-
       end do
     else
       do loop = 1, num_atoms
@@ -511,10 +606,11 @@ contains
     if (ierr /= 0) call io_error('Error allocating atoms_pos_frac in cell_get_atoms')
     allocate (atoms_pos_cart(3, max_sites, num_species), stat=ierr)
     if (ierr /= 0) call io_error('Error allocating atoms_pos_cart in cell_get_atoms')
-    allocate (atoms_pos_cart_photo(3, num_atoms), stat=ierr)
-    if (ierr /= 0) call io_error('Error allocating atoms_pos_cart_photo in cell_get_atoms')
 
-    atoms_pos_cart_photo = atoms_pos_cart_tmp
+   !Photoemission
+    allocate(atoms_pos_cart_photo(3,num_atoms),stat=ierr)
+    if (ierr/=0) call io_error('Error allocating atoms_pos_cart_photo in cell_get_atoms')
+    atoms_pos_cart_photo=atoms_pos_cart_tmp
 
     do loop = 1, num_species
       counter = 0
@@ -547,7 +643,7 @@ contains
       line_s = loop
       if (found_s) then
         call io_error('Error: Found %block'//trim(keyword)//' more than once in out.cell file')
-      end if
+      endif
       found_s = .true.
     end do
 
@@ -562,7 +658,7 @@ contains
         line_e = loop
         if (found_e) then
           call io_error('Error: Found %block'//trim(keyword)//' more than once in out.cell file')
-        end if
+        endif
         found_e = .true.
       end do
 
@@ -601,15 +697,20 @@ contains
             crystal_symmetry_disps(2, counter), crystal_symmetry_disps(3, counter)
         end do
       end if
-    end if
+    else
+      call io_error('Error: Cannot find %block '//trim(keyword)//' in '//trim(seedname)//'-out.cell')
+    endif
 
     return
 
 240 call io_error('Error: Problem reading block keyword '//trim(keyword))
 
   end subroutine cell_read_cell
+  !=========================================================================!
 
+  !=========================================================================!
   subroutine cell_get_atoms
+    !=========================================================================!
     use od_constants, only: bohr2ang
     use od_io, only: io_file_unit, io_error, seedname, maxlen
     use od_algorithms, only: utility_cart_to_frac, utility_frac_to_cart, utility_lowercase
@@ -642,7 +743,7 @@ contains
       tot_num_lines = tot_num_lines + 1
       if (.not. dummy(1:1) == '!' .and. .not. dummy(1:1) == '#') then
         if (len(trim(dummy)) > 0) num_lines = num_lines + 1
-      end if
+      endif
 
     end do
 
@@ -688,11 +789,11 @@ contains
         frac = .false.
       else
         cycle
-      end if
+      endif
       line_s = loop
       if (found_s) then
         call io_error('Error: Found %block'//trim(keyword)//' more than once in cell file')
-      end if
+      endif
       found_s = .true.
     end do
 
@@ -711,7 +812,7 @@ contains
       line_e = loop
       if (found_e) then
         call io_error('Error: Found %block'//trim(keyword)//' more than once in cell file')
-      end if
+      endif
       found_e = .true.
     end do
 
@@ -733,7 +834,7 @@ contains
     elseif (index(dummy, 'bohr') .ne. 0) then
       lconvert = .true.
       line_s = line_s + 1
-    end if
+    endif
 
     num_atoms = line_e - 1 - (line_s + 1) + 1
     allocate (atoms_pos_frac_tmp(3, num_atoms), stat=ierr)
@@ -765,7 +866,6 @@ contains
     if (frac) then
       do loop = 1, num_atoms
         call utility_frac_to_cart(atoms_pos_frac_tmp(:, loop), atoms_pos_cart_tmp(:, loop), real_lattice)
-
       end do
     else
       do loop = 1, num_atoms
@@ -858,7 +958,7 @@ contains
     implicit none
 
     ! THESE ARE IN BOHR, DON'T GET TRIPPED UP AGAIN!
-    !real_lattice=real_lattice*bohr2ang
+    ! real_lattice = real_lattice*bohr2ang
 
     call cell_get_real_lattice
 
@@ -888,7 +988,7 @@ contains
 
     if (cell_volume < 0.0_dp) then ! Left handed set
       cell_volume = -cell_volume
-    end if
+    endif
 
     ! Scale reciprocal lattice by 2*pi/volume
     recip_lattice(:, :) = recip_lattice(:, :)*pi*2.0_dp/cell_volume
@@ -988,7 +1088,7 @@ contains
       call comms_bcast(atoms_pos_cart(1, 1, 1), 3*num_species*max_sites)
       call comms_bcast(atoms_label(1), len(atoms_label(1))*num_species)
       call comms_bcast(atoms_symbol(1), len(atoms_symbol(1))*num_species)
-    end if
+    endif
     call comms_bcast(num_crystal_symmetry_operations, 1)
     if (num_crystal_symmetry_operations > 0) then
       if (.not. on_root) then
@@ -996,7 +1096,7 @@ contains
         if (ierr /= 0) call io_error(" Error : cannot allocate crystal_symmetry_operations in cell_dist")
         allocate (crystal_symmetry_disps(3, num_crystal_symmetry_operations), stat=ierr)
         if (ierr /= 0) call io_error(" Error : cannot allocate crystal_symmetry_disps in cell_dist")
-      end if
+      endif
       call comms_bcast(crystal_symmetry_operations(1, 1, 1), 3*3*num_crystal_symmetry_operations)
       call comms_bcast(crystal_symmetry_disps(1, 1), 3*num_crystal_symmetry_operations)
     end if
@@ -1008,38 +1108,39 @@ contains
     !=========================================================================
     ! This subroutine reads the lattice parameters from the bands file in
     ! order to have them stored when the frac_to_cart and cart_frac subroutines
-    ! are called. Independently of having used the elec_read_band_energy
-    ! subroutine before.
+    ! are called. Independently of having used the elec_read_band_energy 
+    ! subroutine before. 
 
-    use od_comms, only: on_root
-    use od_io, only: io_file_unit, seedname, filename_len, stdout, io_time, &
-                     io_error
-    use od_constants, only: bohr2ang
+     use od_comms, only : on_root
+     use od_io, only : io_file_unit, seedname, filename_len,stdout, io_time,&
+                       io_error
+     use od_constants, only : bohr2ang
 
     integer :: band_unit
     character(filename_len) :: band_filename
 
     !Open the bands file
-    band_unit = io_file_unit()
-    band_filename = trim(seedname)//".bands"
+    band_unit=io_file_unit()
+    band_filename=trim(seedname)//".bands"
 !    print*,'band_filename=',band_filename
 
     ! Read the header from the bands file
-    if (on_root) then
-      open (unit=band_unit, file=band_filename, status="old", form='formatted')!,err=100)
-!100    call io_error('Error: Problem opening bands file in cell_get_real_lattice')
-      read (band_unit, *)
-      read (band_unit, *)
-      read (band_unit, *)
-      read (band_unit, *)
-      read (band_unit, *)
-      read (band_unit, *)
-      read (band_unit, *) real_lattice(:, 1)
-      read (band_unit, *) real_lattice(:, 2)
-      read (band_unit, *) real_lattice(:, 3)
+    if(on_root) then
+       open(unit=band_unit,file=band_filename,status="old",form='formatted')!,err=100)
+!100    call io_error('Error: Problem opening bands file in
+!cell_get_real_lattice')
+       read (band_unit,*)
+       read (band_unit,*)
+       read (band_unit,*)
+       read (band_unit,*)
+       read (band_unit,*)
+       read (band_unit,*)
+       read (band_unit,*) real_lattice(:,1)
+       read (band_unit,*) real_lattice(:,2)
+       read (band_unit,*) real_lattice(:,3)
     end if
-    real_lattice = real_lattice*bohr2ang
-    if (on_root) close (unit=band_unit)
+    real_lattice=real_lattice*bohr2ang
+   if(on_root) close (unit=band_unit)
 
   end subroutine cell_get_real_lattice
 
@@ -1047,54 +1148,57 @@ contains
   subroutine cell_calc_kpoint_r_cart
     !=========================================================================
     ! This subroutine calculates the cartesian coordinates of the k points
-    use od_algorithms, only: utility_reciprocal_frac_to_cart
-    use od_comms, only: my_node_id
-    use od_io, only: io_file_unit, seedname, filename_len, stdout, io_time, &
-                     io_error
+    use od_algorithms, only : utility_reciprocal_frac_to_cart
+    use od_comms, only : my_node_id
+    use od_io, only : io_file_unit, seedname, filename_len,stdout, io_time,&
+      io_error
 !    use od_electronic, only : elec_read_band_energy
 
-    integer :: i, ik, loop, ierr
-    real(kind=dp), allocatable, dimension(:, :) :: kpoint_r_tmp
-    real(kind=dp), allocatable, dimension(:, :) :: kpoint_r_cart_tmp
+    integer :: i,ik,loop,ierr
+    real(kind=dp),allocatable,dimension(:,:) :: kpoint_r_tmp
+    real(kind=dp),allocatable,dimension(:,:) :: kpoint_r_cart_tmp
 
-    allocate (kpoint_r_tmp(3, nkpoints), stat=ierr)
-    if (ierr /= 0) call io_error('Error allocating kpoint_r_tmp in&
-&    cell_calc_kpoint_r_cart')
-    allocate (kpoint_r_cart_tmp(3, nkpoints), stat=ierr)
-    if (ierr /= 0) call io_error('Error allocating kpoint_r_cart_tmp in&
-&    cell_calc_kpoint_r_cart')
+    allocate(kpoint_r_tmp(3,nkpoints),stat=ierr)
+    if (ierr/=0) call io_error('Error allocating kpoint_r_tmp in&
+    cell_calc_kpoint_r_cart')
+    allocate(kpoint_r_cart_tmp(3,nkpoints),stat=ierr)
+    if (ierr/=0) call io_error('Error allocating kpoint_r_cart_tmp in&
+    cell_calc_kpoint_r_cart')
 
-    kpoint_r_tmp = kpoint_r
+   kpoint_r_tmp=kpoint_r
 
-    !This is to be sure that the k point fractional coordinates are stored.
-    !If they are, the elec_read_band_energy will return.
+   !This is to be sure that the k point fractional coordinates are stored.
+   !If they are, the elec_read_band_energy will return.
 !    call elec_read_band_energy
 
     call cell_get_real_lattice
 
     call cell_calc_lattice
 
-    do loop = 1, num_kpoints_on_node(my_node_id)
-      call utility_reciprocal_frac_to_cart(kpoint_r_tmp(:, loop), kpoint_r_cart_tmp(:, loop), recip_lattice)
+       do loop=1,num_kpoints_on_node(my_node_id)
+          call utility_reciprocal_frac_to_cart(kpoint_r_tmp(:,loop),kpoint_r_cart_tmp(:,loop),recip_lattice)
 !      print*,kpoint_r_tmp(1,loop),kpoint_r_tmp(2,loop),kpoint_r_tmp(3,loop),&
 !       kpoint_r_cart_tmp(1,loop),kpoint_r_cart_tmp(2,loop),kpoint_r_cart_tmp(3,loop)
 !print*,loop,kpoint_r_cart_tmp(:,loop),recip_lattice
-    end do
+       end do
 
-    kpoint_r_cart = kpoint_r_cart_tmp
+     kpoint_r_cart=kpoint_r_cart_tmp
 !      do loop=1,num_kpoints_on_node(my_node_id)
 !      print*,kpoint_r_tmp(1,loop),kpoint_r_cart(1,loop),&
 !      kpoint_r_tmp(2,loop),kpoint_r_cart(2,loop),&
 !      kpoint_r_tmp(3,loop),kpoint_r_cart(3,loop)
 !      end do
 
-    deallocate (kpoint_r_tmp, stat=ierr)
-    if (ierr /= 0) call io_error('Error: cell_calc_kpoint_r_cart - &
-&     failed to deallocate kpoint_r_tmp')
+     deallocate(kpoint_r_tmp,stat=ierr)
+     if(ierr/=0) call io_error('Error: cell_calc_kpoint_r_cart - &
+     failed to deallocate kpoint_r_tmp')
 
-    deallocate (kpoint_r_cart_tmp, stat=ierr)
-    if (ierr /= 0) call io_error('Error: cell_calc_kpoint_r_cart - &
-&     failed to deallocate kpoint_r_cart_tmp')
+     deallocate(kpoint_r_cart_tmp,stat=ierr)
+     if(ierr/=0) call io_error('Error: cell_calc_kpoint_r_cart - &
+     failed to deallocate kpoint_r_cart_tmp')
+
+
 
   end subroutine cell_calc_kpoint_r_cart
-end module od_cell
+
+endmodule od_cell
