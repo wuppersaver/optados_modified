@@ -66,7 +66,7 @@ contains
     !===============================================================================
     use od_parameters, only: linear, fixed, adaptive, quad, iprint, dos_per_volume
     use od_electronic, only: elec_read_band_gradient, band_gradient, nspins, electrons_per_state, &
-                             num_electrons, efermi_set
+      num_electrons, efermi_set
     use od_comms, only: on_root
     use od_io, only: stdout, io_error, io_time
     use od_cell, only: cell_volume
@@ -145,7 +145,7 @@ contains
 !    if(.not.on_root) then
 !       if(allocated(E)) deallocate(E, stat=ierr)
 !       if (ierr/=0) call io_error ("cannot deallocate  E")
-!    end if
+!    endif
 
     time1 = io_time()
     if (on_root .and. iprint > 1) then
@@ -169,7 +169,7 @@ contains
       ! if(quad) then
       !    dos_quad=dos_quad/cell_volume
       !    intdos_quad=intdos_quad/cell_volume
-      ! end if
+      ! endif
     end if
 
   end subroutine jdos_utils_calculate
@@ -445,7 +445,7 @@ contains
 !          if(allocated(weighted_jdos)) deallocate(weighted_jdos,stat=ierr)
 !          if (ierr/=0) call io_error (" ERROR : jdos : merge_jdos : cannot deallocate weighted_dos")
 !       end if
-!    end if
+!    endif
   end subroutine jdos_utils_merge
 
 end module od_jdos_utils

@@ -1,5 +1,7 @@
 !-*- mode: F90 -*-!
 module od_conv
+   !! Helper module for od2od used for file conversions.
+
   use od_constants, only: dp
   use od_electronic, only: elec_read_optical_mat, elec_read_band_gradient, elec_read_elnes_mat,&
        & elec_pdos_read, elec_read_band_energy, omefile_header, domefile_header, pdosfile_header,&
