@@ -1,0 +1,97 @@
+Things To Do
+============
+
+=================================
+Version 1.0 before 17th September
+=================================
+
+[JRY] Bullet proof legacy_file_format and out.cell. Symmetries in out.cell? 
+-- Edit the code to warn
+-- Edit the manual to explain what to do (cp .cell out.cell) 
+
+================
+Paper
+================
+[???] Do the introduction last
+[JRY/RJN] End of Chapter 2.0
+[AJM] Chapter 4: (Copy from Manual)
+[AJM] Chapter 5: (Copy from Examples)
+[JRY] Chapter 6: §1 (Copper)
+[AJM] Appendix A.
+
+
+=======
+Manual
+=======
+
+[AJM] Move stuff from Paper to Manual
+
+=================================
+Future Versions
+=================================
+Project onto individual (real) spherical harmonics [JRY]
+
+================
+Website
+================
+[AJM] Add tarball to [DOWNLOAD]
+[AJM] Add PDF userguide [EXAMPLES]
+[AJM] Add examples [EXAMPLES]
+[AJM] Add Comp. Phys. Comm [PUBLICATIONS]
+[AJM] Move AJM to TCM.
+
+===============
+Version 2.0
+===============
+Full gnuplot 
+
+=== MIJP === 5/3/2017
+
+*   Can you please add electron effective mass to the feature request list for next version of OptaDOS?
+
+=== CJP Coments == 
+
+3. Would it be better to move the box labeling the line (ie. [ -- Total Dos]) to the left hand side to reduce the change of overlap with the data?
+AJM --  I keep finding examples where it is as equal a nuisance on the left.
+
+4. I may have missed how to do this - for spin polarised calculations you will want the total DOS, and spin DOS, as well as alpha, beta.
+AJM -- This is a good point. Trivial to implement.
+
+5. Following on from 4. - the total, spin and alpha, beta DOSes at Ef will want to be grep-able from the odo file.
+AJM -- Also good idea.
+
+6) Calling optados without an odi file should execute default behaviour. I suggest, calculating the DOS with our recommended settings. 
+AJM -- I agree. We need to check that the defaults are sensible. 
+
+8) I suggest we make the linear broadening the default - it does not require a parameter to be set smearing for reasonable results.
+(This suggestion follows after calculating the DOS for the Al example supplied using the following odi:
+TASK : dos
+#BROADENING : linear
+COMPUTE_BAND_GAP : true
+try it yourself to see what I mean - the linear makes a much better impression. Can you suggest counter examples?).
+AJM: I'm coming round to the idea that linear is better -- once we've addressed point 7, linear should be made default. (unless there are good counter examples.)
+
+10) TASK : dos should be the default (currently the default task it to do nothing).
+AJM: I think this is correct. Since we will have to do something to satisfy (6). Having linear as the default (8) would also mean fewer parameters to guess when no odi.  (Implement 7, then 8 then 6).
+
+11) I am not convinced about the naming strategy of the output. I don't think I user really cares about whether the results are adaptive/linear, but rather about the physics quantity. So we should stick to: .dos.agr, .jdos.agr, .core.agr etc.
+AJM: Not if we continue with TASK: compare_dos . There needs to be a way to differentiate. But this could be done only in the compare_dos case.
+
+12) The .dat files should only be generated if requested through the OUTPUT_FORMAT parameter. Could we allow the request of multiple formats?
+AJM: I'm divided over this. It would be cleaner not to have them, if the user requests a graphical format. But they're essentially free, and I find them useful.
+
+13) Calculating the band gaps seems to rely on the supplied kpoint grid only. It would be good to make an attempt based on the extrapolation - certainly we can do this for the thermal gap, from the DOS (i.e. how many bins are exactly zero in the gap region).
+AJM: This is true. However at the momemnt few  bins turn out to be exactly zero. This may get better with CJP's band kissing tweaks.
+
+14) Exectuting: "optados" produces (in a err file)
+
+ OptaDOS: Execution started on 14 Apr 2013 at 10:04:38 
+ Exiting.......
+ Error: Problem opening input file optados.odi
+
+I suggest sending error information to STDERR.
+(a) AJM: This is not the CASTEP way, nor the usual way to deal with errors in a parallel code. Of course, I think there is a case to think about how optados behaves when called argumentless. Other errors shouldn't exist!
+
+People can then choose to take not, or send to /dev/null. I would also prefer if the output is sent to STDOUT, but feel less strongly about this.
+(b) AJM: Again not the CASTEP way. I find the output file useful.
+

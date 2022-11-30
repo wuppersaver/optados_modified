@@ -1,0 +1,4 @@
+optados/*.log
+optados/*.x
+optados/*.o*
+optados/*.e*
